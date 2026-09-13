@@ -148,3 +148,51 @@ code; two are gated on external dashboards/accounts and are now prepared + docum
   `customer_verification_required` (403) — not a code error; Vercel requires a
   credit card on file to unlock AI Gateway free credits. Add a card at
   vercel.com/~/ai → the gateway will then serve requests.
+- **Superseded 2026-09-10:** `lib/aiGateway.js` was deleted. It imported `ai`, which was never
+  added to `package.json`, so it could not have compiled; nothing imported it.
+
+---
+
+## Session log (2026-09-10 → 2026-09-14) — agent-architecture audit, webhooks UI, CI repair
+
+Branch `fix/agent-architecture-audit`.
+
+### Agent/LLM hardening (`e19bb24`, `2aae8f5`)
+- `/api/result/save` derives `booked`/`qualified`/`bookedSlot` from the transcript
+  (`lib/resultState.js`) instead of trusting a client-sent `state`, and only fires
+  `appointment.booked` webhooks for the agent's signed-in owner.
+- `/api/agent/chat` keeps the thread server-side in `conversations/{id}` (one new `message` per
+  turn against a server-issued `conversationId`) and rejects owned agents for anyone but the owner.
+- The `<STATE>` tag protocol is replaced by Gemini `responseSchema` structured output, with
+  `thinkingBudget: 0` — Gemini 2.5 bills thinking against `maxOutputTokens` and was truncating the
+  JSON after the first turn (found only by a live round-trip).
+- Support bot facts are built from `PLANS` + `PROSPECT_CHANNELS`; it had been advertising
+  Instagram, WhatsApp, Messenger, voice and Calendly booking, none of which exist.
+- Anonymous LLM rate limiting fails closed; authenticated callers still fail open.
+- Verified end to end against live Gemini + Firebase: 7-turn conversation to a booking, then a
+  save carrying only `{agentId, conversationId}` derived `booked: true, bookedSlot: "Tomorrow 2:00pm"`.
+  Test documents were deleted from Firestore afterwards.
+
+### Webhooks settings page
+- `app/settings/webhooks/page.js` + dashboard nav link. The webhooks CRUD API has existed since the
+  2026-07-01 sprint but no UI called it, so users could not register a URL. Shows the signing
+  secret once and explains `X-DMForge-Signature` verification. Every other UI → API call was
+  cross-checked (36 calls, path + method) and all resolve.
+
+### CI repair
+- `pre-deploy-verify.yml` had never passed (0/6): it linted `git log -1`, which on a
+  `pull_request` checkout is GitHub's synthetic merge commit, with a regex that also rejected
+  scoped subjects. Now lints every commit in the PR range. Its duplicate build and its
+  production e2e step (which had never run) were removed — `ci.yml` gates the build, `e2e.yml`
+  stays manual.
+- `ci.yml` gains a browserless `Unit specs` job for `tests/e2e/result-state.spec.js`.
+- `cron-reminders.yml` deleted: 100/100 runs failed with 401, and Firebase `sendReminders` is the
+  live 15-min scheduler (confirmed in Cloud Logging).
+- `e2e.yml` Node 20 → 22, matching the other workflows.
+- `email-channel.spec.js` had asserted a sign-in message that `proxy.js` (2026-07-09) made
+  unreachable by redirecting signed-out `/settings/*` requests; it now asserts the 307.
+
+### Still open
+- The deployed `sendReminders` Cloud Function runs `nodejs20` (end-of-life April 2026).
+- Dependabot reports 20 vulnerabilities on `main` (10 high) — not bumped without approval.
+- `yarn` is broken on the dev machine (corepack shim missing); `npx next build` is the same build.

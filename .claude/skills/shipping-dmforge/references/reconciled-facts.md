@@ -55,12 +55,12 @@ whenever you catch a new piece of drift — that's the whole point of it existin
   deliberate bleeding-edge stance, not drift. Don't "fix" it by pinning to
   stable unless the user asks.
 
-## Node version drift across workflows
+## Node versions
 
-`ci.yml`/`deploy.yml` use Node 22; `pre-deploy-verify.yml`/`e2e.yml` use Node
-20, as of the last check. Confirm which one matches Vercel's actual build
-image before treating either as authoritative, and don't assume this has been
-fixed without checking the current workflow files.
+As of 2026-09-14 every workflow that sets up Node uses 22 (`pre-deploy-verify.yml`
+no longer installs Node — it only lints commits). The deployed `sendReminders`
+Cloud Function still runs `nodejs20`, past end-of-life since April 2026; moving
+it is a `firebase deploy --only functions`, which needs user approval.
 
 ---
 

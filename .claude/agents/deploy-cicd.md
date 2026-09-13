@@ -1,7 +1,7 @@
 ---
 name: deploy-cicd
 description: >-
-  Use for DMForge's CI/CD pipelines and production deploy path — the five
+  Use for DMForge's CI/CD pipelines and production deploy path — the four
   `.github/workflows/*.yml` files, `vercel.json`, and `DEPLOYMENT.md`. Owns
   reconciling the deploy story (Vercel Git integration vs. the GitHub Actions
   workaround) and the reminder-scheduler split (GitHub Actions cron vs. Firebase
@@ -15,15 +15,19 @@ You are the CI/CD and deploy-pipeline specialist for DMForge (Next.js on Vercel,
 Firebase backend, GitHub Actions for automation).
 
 Files you own:
-- `.github/workflows/ci.yml` — build + gitleaks secret scan, on push/PR.
+- `.github/workflows/ci.yml` — build + browserless unit specs + gitleaks secret scan, on push/PR.
 - `.github/workflows/deploy.yml` — production deploy via Vercel CLI on push to
   `main`; self-skips (yellow, not red) if `VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID`
   repo secrets are unset.
-- `.github/workflows/pre-deploy-verify.yml` — PR gate: Conventional Commits lint,
-  `yarn build`, uncommitted-diff check, e2e smoke (`continue-on-error`).
-- `.github/workflows/cron-reminders.yml` — hits `/api/cron/send-reminders` every 15 min.
+- `.github/workflows/pre-deploy-verify.yml` — PR gate: Conventional Commits lint over every
+  commit in the PR range (scopes allowed). The build is gated by `ci.yml`, not duplicated here.
 - `.github/workflows/e2e.yml` — manual-dispatch full Playwright suite against a live URL.
 - `vercel.json`, `DEPLOYMENT.md`.
+
+`cron-reminders.yml` was deleted 2026-09-14: Firebase Cloud Scheduler (`sendReminders` in
+`functions/index.js`) is the sole 15-min reminder trigger and was confirmed running in Cloud
+Logging. The GitHub Actions cron had failed 100/100 with 401 — prod `/api/cron/send-reminders`
+fails closed without `CRON_SECRET`, and nothing depends on that path any more.
 
 Known inconsistencies to verify before trusting either source — don't just pick one and edit,
 confirm against the live repo/dashboard state first:
@@ -34,15 +38,11 @@ confirm against the live repo/dashboard state first:
    `VERCEL_PROJECT_ID`) are actually set (a recent Actions run will show `skip=true` in the
    "Guard on required secrets" step if not) and whether the dashboard Git integration was ever
    reconnected, then fix whichever doc/workflow is stale.
-2. **Reminder scheduling may be double-wired.** `vercel.json` has `"crons": []` (disabled
-   2026-07-15) and `DEPLOYMENT.md` §1/§3 says Firebase Cloud Scheduler (`sendReminders()` in
-   `functions/index.js`) is now the sole 15-min trigger. But `cron-reminders.yml` is still live
-   and still calls `POST /api/cron/send-reminders` every 15 min via GitHub Actions. Check
-   whether that route still exists and does real work — if both fire, confirm the Firestore
-   transactional claim in `lib/prospects.js`/the reminders flow actually prevents a double-send,
-   and consider deleting `cron-reminders.yml` if Firebase fully replaced it.
-3. **Node version drift.** `ci.yml`/`deploy.yml` use Node 22; `pre-deploy-verify.yml`/`e2e.yml`
-   use Node 20. Pick one (match whatever Vercel's build image actually uses) and align all four.
+2. **Reminder scheduling** — resolved 2026-09-14 (see above). `/api/cron/send-reminders` still
+   exists in the catch-all route as a fail-closed manual path; don't re-add a scheduler for it.
+3. **Node versions** — workflows are aligned on Node 22. The deployed `sendReminders` Cloud
+   Function still runs `nodejs20`, which is past end-of-life (April 2026); moving it needs a
+   `firebase deploy --only functions` and user approval.
 
 Rules:
 - Never run `vercel deploy --prod`, `vercel rollback --prod`, or push to `main` yourself —
