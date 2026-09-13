@@ -11,7 +11,11 @@ test('channel and outreach endpoints require auth', async ({ request }) => {
   expect(send.status()).toBe(401)
 })
 
-test('/settings/channels prompts sign-in when logged out', async ({ page }) => {
-  await page.goto('/settings/channels')
-  await expect(page.getByText(/sign in to manage channels/i)).toBeVisible()
+// proxy.js (added 2026-07-09) redirects every signed-out /settings/* request
+// home before the page renders; this used to assert the page's own sign-in
+// fallback, which that redirect made unreachable.
+test('/settings/channels redirects home when logged out', async ({ request }) => {
+  const res = await request.get('/settings/channels', { maxRedirects: 0 })
+  expect(res.status()).toBe(307)
+  expect(new URL(res.headers().location, 'http://x').pathname).toBe('/')
 })
