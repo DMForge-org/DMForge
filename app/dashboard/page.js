@@ -91,6 +91,7 @@ export default function Dashboard() {
             <Link href="/settings/channels" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="Channels">Channels</Link>
             <Link href="/settings/team" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="Team">Team</Link>
             <Link href="/settings/integrations" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="Integrations">Integrations</Link>
+            <Link href="/settings/webhooks" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="Webhooks">Webhooks</Link>
             {me?.plan === 'agency' && <Link href="/settings/white-label" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="White Label">Brand</Link>}
             <button onClick={logout} aria-label="Sign out" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="Sign out"><LogOut className="w-4 h-4" /></button>
           </div>
