@@ -204,8 +204,23 @@ Branch `fix/agent-architecture-audit`.
   broken script; `/api/agent/chat` falls back to a default intro for stored scripts that still
   carry one and tells the model never to show square brackets.
 
+### Production re-verify + a11y fix (2026-09-14, `68775b5`)
+- `prod-verify` against deploy `efabd7b`: 64/64 pages 200 (sitemap + homepage links + app routes),
+  apex/http 308 → `https://www.dmforge.org/`. Authenticated journey 41/41 — anon + owned agent
+  create/chat/save/share, owner-only 403, sequences, support bot, prospects CRUD, inbound ingest,
+  webhooks CRUD, Stripe checkout (live mode) + portal. No placeholder leaks in generated scripts.
+  Browser pass clean; zero error/warning log lines. QA Firestore docs and the auth user deleted.
+- The icon-only send buttons had no accessible name: labelled "Send reply" (homepage simulator) and
+  "Log message" (inbox thread). Build + CI green, live in production.
+
 ### Still open
-- `/favicon.ico` 404s (linked from the homepage).
+- `/favicon.ico` 404s (linked from the homepage) — still 404 on 2026-09-14.
 - The deployed `sendReminders` Cloud Function runs `nodejs20` (end-of-life April 2026).
 - Dependabot reports 20 vulnerabilities on `main` (10 high) — not bumped without approval.
-- `yarn` is broken on the dev machine (corepack shim missing); `npx next build` is the same build.
+- `yarn` is broken on the dev machine (global corepack shim missing). The pinned 1.22.22 is still in
+  corepack's cache: `node "$LOCALAPPDATA/node/corepack/v1/yarn/1.22.22/bin/yarn.js" <cmd>`, or
+  reinstall corepack and `corepack enable`.
+- Delete the live-mode Stripe customer `qa-prodverify-1789368124@example.com` left by the
+  2026-09-14 checkout check (no charge; no Stripe key locally).
+- Simulator quality: the agent re-asked about timing after the lead had already given one, and
+  `state.step` stayed at 1.
