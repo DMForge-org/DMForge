@@ -55,43 +55,74 @@ export default function InboxPage() {
 
   useEffect(() => { if (user) load() }, [user, load])
 
+  useEffect(() => {
+    if (!selected) return
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setSelected(null)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [selected])
+
   async function openThread(id) {
-    const res = await authFetch(`/api/prospects/${id}`, { method: 'GET' }, getToken)
-    const d = await res.json()
-    if (d.prospect) setSelected({ prospect: d.prospect, messages: d.messages || [] })
+    try {
+      const res = await authFetch(`/api/prospects/${id}`, { method: 'GET' }, getToken)
+      const d = await res.json()
+      if (d.prospect) setSelected({ prospect: d.prospect, messages: d.messages || [] })
+      else toast.error(d.error || 'Failed to open thread')
+    } catch {
+      toast.error('Failed to open thread')
+    }
   }
 
   async function sendMessage() {
     if (!draft.trim() || !selected) return
     const id = selected.prospect.id
-    const res = await authFetch(`/api/prospects/${id}/messages`, { method: 'POST', body: JSON.stringify({ direction: 'outbound', body: draft.trim() }) }, getToken)
-    const d = await res.json()
-    if (d.message) { setDraft(''); await openThread(id); load() }
-    else toast.error(d.error || 'Failed to send')
+    try {
+      const res = await authFetch(`/api/prospects/${id}/messages`, { method: 'POST', body: JSON.stringify({ direction: 'outbound', body: draft.trim() }) }, getToken)
+      const d = await res.json()
+      if (d.message) { setDraft(''); await openThread(id); load() }
+      else toast.error(d.error || 'Failed to send')
+    } catch {
+      toast.error('Failed to send')
+    }
   }
 
   async function patchProspect(id, patch) {
-    const res = await authFetch(`/api/prospects/${id}`, { method: 'PUT', body: JSON.stringify(patch) }, getToken)
-    const d = await res.json()
-    if (d.prospect) {
-      if (d.booked) toast.success('Booked — reminders + sync fired')
-      setSelected((s) => (s && s.prospect.id === id ? { ...s, prospect: d.prospect } : s))
-      load()
-    } else toast.error(d.error || 'Update failed')
+    try {
+      const res = await authFetch(`/api/prospects/${id}`, { method: 'PUT', body: JSON.stringify(patch) }, getToken)
+      const d = await res.json()
+      if (d.prospect) {
+        if (d.booked) toast.success('Booked — reminders + sync fired')
+        setSelected((s) => (s && s.prospect.id === id ? { ...s, prospect: d.prospect } : s))
+        load()
+      } else toast.error(d.error || 'Update failed')
+    } catch {
+      toast.error('Update failed')
+    }
   }
 
   async function createLead() {
     if (!newLead.name.trim()) { toast.error('Name required'); return }
-    const res = await authFetch('/api/prospects', { method: 'POST', body: JSON.stringify(newLead) }, getToken)
-    const d = await res.json()
-    if (d.id) { toast.success('Lead added'); setShowNew(false); setNewLead({ name: '', handle: '', channel: 'instagram', email: '', phone: '' }); load() }
-    else toast.error(d.error || 'Failed to add')
+    try {
+      const res = await authFetch('/api/prospects', { method: 'POST', body: JSON.stringify(newLead) }, getToken)
+      const d = await res.json()
+      if (d.id) { toast.success('Lead added'); setShowNew(false); setNewLead({ name: '', handle: '', channel: 'instagram', email: '', phone: '' }); load() }
+      else toast.error(d.error || 'Failed to add')
+    } catch {
+      toast.error('Failed to add')
+    }
   }
 
   async function loadInboundUrl() {
-    const res = await authFetch('/api/inbound/token', { method: 'POST', body: JSON.stringify({}) }, getToken)
-    const d = await res.json()
-    if (d.url) { setInbound(d.url); navigator.clipboard?.writeText(d.url).catch(() => {}); toast.success('Ingestion URL copied') }
+    try {
+      const res = await authFetch('/api/inbound/token', { method: 'POST', body: JSON.stringify({}) }, getToken)
+      const d = await res.json()
+      if (d.url) { setInbound(d.url); navigator.clipboard?.writeText(d.url).catch(() => {}); toast.success('Ingestion URL copied') }
+      else toast.error(d.error || 'Failed to create ingestion URL')
+    } catch {
+      toast.error('Failed to create ingestion URL')
+    }
   }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-[#A0A0C8]">Loading…</div>
@@ -125,13 +156,13 @@ export default function InboxPage() {
       {showNew && (
         <Card className="bg-[#161630] border-[#2A2A55] p-4 mb-4 space-y-2">
           <div className="grid grid-cols-2 gap-2">
-            <Input placeholder="Name" value={newLead.name} onChange={(e) => setNewLead({ ...newLead, name: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />
-            <select value={newLead.channel} onChange={(e) => setNewLead({ ...newLead, channel: e.target.value })} className="bg-[#0F0F26] border border-[#2A2A55] rounded-md px-3 text-sm">
+            <Input aria-label="Name" placeholder="Name" value={newLead.name} onChange={(e) => setNewLead({ ...newLead, name: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />
+            <select aria-label="Lead channel" value={newLead.channel} onChange={(e) => setNewLead({ ...newLead, channel: e.target.value })} className="bg-[#0F0F26] border border-[#2A2A55] rounded-md px-3 text-sm">
               {['instagram', 'linkedin', 'email', 'sms', 'manual'].map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
-            <Input placeholder="@handle" value={newLead.handle} onChange={(e) => setNewLead({ ...newLead, handle: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />
-            <Input placeholder="Phone (for reminders)" value={newLead.phone} onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />
-            <Input placeholder="Email (for GHL sync)" value={newLead.email} onChange={(e) => setNewLead({ ...newLead, email: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55] col-span-2" />
+            <Input aria-label="Handle" placeholder="@handle" value={newLead.handle} onChange={(e) => setNewLead({ ...newLead, handle: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />
+            <Input aria-label="Phone" placeholder="Phone (for reminders)" value={newLead.phone} onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />
+            <Input aria-label="Email" placeholder="Email (for GHL sync)" value={newLead.email} onChange={(e) => setNewLead({ ...newLead, email: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55] col-span-2" />
           </div>
           <Button onClick={createLead} className="btn-primary border-0 text-sm w-full">Add lead</Button>
         </Card>
@@ -139,7 +170,7 @@ export default function InboxPage() {
 
       <div className="flex gap-1.5 mb-4 flex-wrap">
         {['all', ...STATUSES].map((s) => (
-          <button key={s} onClick={() => setFilter(s)}
+          <button key={s} type="button" aria-pressed={filter === s} onClick={() => setFilter(s)}
             className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${filter === s ? 'bg-[#6B5BFF] text-white' : 'bg-[#161630] text-[#A0A0C8] hover:text-white border border-[#2A2A55]'}`}>
             {s}{s !== 'all' ? ` (${prospects.filter((p) => p.status === s).length})` : ` (${prospects.length})`}
           </button>
@@ -153,8 +184,9 @@ export default function InboxPage() {
       ) : (
         <div className="space-y-2">
           {shown.map((p) => (
-            <Card key={p.id} onClick={() => openThread(p.id)}
-              className="bg-[#161630] border-[#2A2A55] p-4 cursor-pointer hover:border-[#6B5BFF]/60 transition-colors">
+            <Card key={p.id} role="button" tabIndex={0} onClick={() => openThread(p.id)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openThread(p.id) } }}
+              className="bg-[#161630] border-[#2A2A55] p-4 cursor-pointer hover:border-[#6B5BFF]/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6B5BFF]">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -175,19 +207,19 @@ export default function InboxPage() {
 
       {/* Thread panel */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={() => setSelected(null)}>
-          <div className="w-full max-w-md bg-[#0F0F26] border-l border-[#2A2A55] h-full flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={() => setSelected(null)} role="presentation">
+          <div role="dialog" aria-modal="true" aria-labelledby="thread-panel-title" className="w-full max-w-md bg-[#0F0F26] border-l border-[#2A2A55] h-full flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-[#2A2A55] flex items-start justify-between">
               <div>
-                <div className="flex items-center gap-2"><span className="font-semibold">{selected.prospect.name}</span><StatusBadge status={selected.prospect.status} /></div>
+                <div className="flex items-center gap-2"><span id="thread-panel-title" className="font-semibold">{selected.prospect.name}</span><StatusBadge status={selected.prospect.status} /></div>
                 <div className="text-xs text-[#A0A0C8] mt-0.5">{selected.prospect.handle || selected.prospect.email || selected.prospect.phone || '—'} · {selected.prospect.channel}</div>
               </div>
-              <button onClick={() => setSelected(null)} className="text-[#A0A0C8] hover:text-white"><X className="w-5 h-5" /></button>
+              <button onClick={() => setSelected(null)} aria-label="Close thread" className="text-[#A0A0C8] hover:text-white"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="p-4 border-b border-[#2A2A55] flex flex-wrap gap-1.5">
               {STATUSES.map((s) => (
-                <button key={s} onClick={() => patchProspect(selected.prospect.id, { status: s })}
+                <button key={s} type="button" aria-pressed={selected.prospect.status === s} onClick={() => patchProspect(selected.prospect.id, { status: s })}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-medium capitalize ${selected.prospect.status === s ? 'bg-[#6B5BFF] text-white' : 'bg-[#161630] text-[#A0A0C8] border border-[#2A2A55]'}`}>{s}</button>
               ))}
             </div>
@@ -195,7 +227,7 @@ export default function InboxPage() {
             {selected.prospect.status === 'booked' || selected.prospect.scheduledAt ? (
               <div className="px-4 py-2 border-b border-[#2A2A55] flex items-center gap-2 text-xs text-[#A0A0C8]">
                 <Calendar className="w-3.5 h-3.5 text-[#5FE0A8]" />
-                <input type="datetime-local" defaultValue={selected.prospect.scheduledAt ? selected.prospect.scheduledAt.slice(0, 16) : ''}
+                <input type="datetime-local" aria-label="Scheduled call time" defaultValue={selected.prospect.scheduledAt ? selected.prospect.scheduledAt.slice(0, 16) : ''}
                   onChange={(e) => patchProspect(selected.prospect.id, { scheduledAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
                   className="bg-[#161630] border border-[#2A2A55] rounded px-2 py-1 text-xs" />
                 <span>call time (drives SMS reminders)</span>
@@ -213,7 +245,7 @@ export default function InboxPage() {
             </div>
 
             <div className="p-3 border-t border-[#2A2A55] flex gap-2">
-              <Input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+              <Input aria-label="Message to log" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                 placeholder="Log an outbound message…" className="bg-[#161630] border-[#2A2A55] text-sm" />
               <Button onClick={sendMessage} className="btn-primary border-0 px-3"><Send className="w-4 h-4" /></Button>
             </div>

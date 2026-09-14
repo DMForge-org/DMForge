@@ -51,10 +51,14 @@ export default function Dashboard() {
   }, [whiteLabel])
 
   async function portal() {
-    const res = await authFetch('/api/billing/portal', { method: 'POST', body: JSON.stringify({}) }, getToken)
-    const data = await res.json()
-    if (data.url) window.location.href = data.url
-    else toast.error(data.error || 'No active subscription')
+    try {
+      const res = await authFetch('/api/billing/portal', { method: 'POST', body: JSON.stringify({}) }, getToken)
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+      else toast.error(data.error || 'No active subscription')
+    } catch {
+      toast.error('Network error — try again')
+    }
   }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-[#A0A0C8]">Loading…</div>
@@ -87,8 +91,9 @@ export default function Dashboard() {
             <Link href="/settings/channels" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="Channels">Channels</Link>
             <Link href="/settings/team" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="Team">Team</Link>
             <Link href="/settings/integrations" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="Integrations">Integrations</Link>
+            <Link href="/settings/webhooks" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="Webhooks">Webhooks</Link>
             {me?.plan === 'agency' && <Link href="/settings/white-label" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="White Label">Brand</Link>}
-            <button onClick={logout} className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="Sign out"><LogOut className="w-4 h-4" /></button>
+            <button onClick={logout} aria-label="Sign out" className="text-[#A0A0C8] hover:text-white p-2 rounded-lg hover:bg-[#1F1F42]" title="Sign out"><LogOut className="w-4 h-4" /></button>
           </div>
         </div>
       </header>
@@ -254,6 +259,7 @@ function FollowUpSequence({ agentId, getToken }) {
               {editingId === s.id ? (
                 <textarea
                   autoFocus
+                  aria-label="Follow-up message body"
                   className="mt-1 w-full bg-[#161630] border border-[#2A2A55] rounded text-xs text-white p-2"
                   rows={3}
                   value={draft}
@@ -262,7 +268,11 @@ function FollowUpSequence({ agentId, getToken }) {
                 />
               ) : (
                 <p
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Edit follow-up message"
                   onClick={() => { setEditingId(s.id); setDraft(s.body) }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditingId(s.id); setDraft(s.body) } }}
                   className="text-xs text-[#A0A0C8] mt-1 cursor-text hover:text-white"
                 >
                   {s.body}

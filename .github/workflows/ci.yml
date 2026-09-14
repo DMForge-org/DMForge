@@ -46,6 +46,29 @@ jobs:
           # FIREBASE_SERVICE_ACCOUNT_JSON) are not needed at build time —
           # they are only read when API routes are invoked at request time.
 
+  unit:
+    name: Unit specs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # Pure-logic specs only: no server, no credentials, no browser binaries
+      # (none of them request the `page` fixture). The rest of tests/e2e needs
+      # a live deployment and stays manual in e2e.yml. Add a spec here only if
+      # it runs with neither BASE_URL nor secrets.
+      - name: Run unit specs
+        run: yarn playwright test tests/e2e/result-state.spec.js tests/e2e/script-text.spec.js --reporter=list
+
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest
