@@ -5,6 +5,7 @@ import { Footer } from '@/components/footer'
 import { IBM_Plex_Sans, Fraunces } from 'next/font/google'
 import { getBaseUrl } from '@/lib/baseUrl'
 import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const baseUrl = getBaseUrl()
 
@@ -44,6 +45,7 @@ export default function RootLayout({ children }) {
         <Footer />
         <SupportChat />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
