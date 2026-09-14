@@ -15,6 +15,7 @@ import { testTwilio, sendSMS } from '@/lib/sms'
 import { ghlValidate, ghlGetContact, ghlCreateContact, ghlCreateAppointment } from '@/lib/ghl'
 import { onProspectBooked, normalizeStatus, normalizeChannel, PROSPECT_STATUSES, PROSPECT_CHANNELS } from '@/lib/prospects'
 import { deriveResultState } from '@/lib/resultState'
+import { findPlaceholders, scriptPlaceholders } from '@/lib/scriptText'
 
 // Cross-origin callers must be on the allow-list; same-origin requests never
 // need CORS headers. Override via CORS_ORIGINS (comma-separated) — the old
@@ -162,9 +163,31 @@ async function handleRoute(request, { params }) {
         ? calendarSlots.slice(0, 5).map(s => truncate(String(s), 100))
         : ['Tomorrow 2:00pm', 'Tomorrow 6:00pm', 'Thursday 12:00pm']
 
-      const sys = `You are an elite DM-setter copywriter. Given a coach's niche, offer, audience, qualification focus and tone, produce a JSON object with: { intro: string (opening DM after a comment/follow), questions: [ { key: string, ask: string, why: string } ] (4-6 short qualification questions in the right order), bookingMessage: string (message to propose a call once qualified), tonePrompt: string (1-2 sentence style guide), disqualifyResponse: string (gentle off-ramp if unqualified) }. The intro and questions MUST be casual, short, sound like a human coach typing on phone, never robotic, no emojis at end of every line, use the coach's tone. Reply with JSON ONLY.`
+      const sys = `You are an elite DM-setter copywriter. Given a coach's niche, offer, audience, qualification focus and tone, produce a JSON object with: { intro: string (the first DM to someone who just followed the coach or commented on a post — don't say which, and never write "comment/follow"), questions: [ { key: string, ask: string, why: string } ] (4-6 short qualification questions in the right order), bookingMessage: string (message to propose a call once qualified), tonePrompt: string (1-2 sentence style guide), disqualifyResponse: string (gentle off-ramp if unqualified) }. The intro and questions MUST be casual, short, sound like a human coach typing on phone, never robotic, no emojis at end of every line, use the coach's tone.
+Every intro, ask, bookingMessage and disqualifyResponse is sent to real leads EXACTLY as written, with nothing filled in. So never use placeholders, template slots or square brackets — no [Name], no [topic], no [reason]. You don't know the lead's name or which post they engaged with: write lines that read naturally without either. Reply with JSON ONLY.`
       const usr = `Niche: ${safeNiche}\nOffer: ${safeOffer}\nIdeal audience: ${safeAudience || 'general'}\nMust qualify on: ${safeQualification || 'goal, timing, budget, commitment'}\nTone: ${safeTone || 'warm, direct, encouraging'}\nCoach name in chat: ${safeAgentName}`
-      const script = await chatJSON({ messages: [{ role: 'system', content: sys }, { role: 'user', content: usr }] })
+      const scriptMessages = [{ role: 'system', content: sys }, { role: 'user', content: usr }]
+      let script = await chatJSON({ messages: scriptMessages })
+
+      // The prompt alone doesn't stop Gemini leaving slots unfilled, and a stored
+      // slot reaches every lead this agent ever talks to. One corrective retry,
+      // then refuse to save rather than persist a broken script.
+      let leaks = scriptPlaceholders(script)
+      if (leaks.length) {
+        console.error('agent/create: placeholders in generated script, retrying:', JSON.stringify(leaks))
+        script = await chatJSON({
+          messages: [
+            ...scriptMessages,
+            { role: 'assistant', content: JSON.stringify(script) },
+            { role: 'user', content: `These are unfilled placeholders a lead would see verbatim: ${leaks.map((l) => `${l.field}: ${l.placeholder}`).join('; ')}. Return the full JSON again with each one rewritten as natural wording. No square brackets anywhere. JSON only.` },
+          ],
+        })
+        leaks = scriptPlaceholders(script)
+      }
+      if (leaks.length) {
+        console.error('agent/create: placeholders survived the retry, not saving:', JSON.stringify(leaks))
+        return handleCORS(request, NextResponse.json({ error: "Couldn't generate a clean script — please try again" }, { status: 502 }))
+      }
 
       const id = crypto.randomUUID()
       const agent = {
@@ -222,6 +245,7 @@ Rules:
 - When all questions have plausible answers, propose a call using this message: "${agent.script?.bookingMessage}" and OFFER three real slots from this list, plain text inline: ${agent.calendarSlots.join(', ')}.
 - If the lead picks a slot, confirm with: "booked ✅ [slot] — confirmation on its way" and you are done.
 - If the lead seems clearly unqualified, gently use: "${agent.script?.disqualifyResponse}".
+- The lead must never see square brackets. If a scripted line above contains a placeholder like [Name] or [topic], fill it with something you actually know or reword that part naturally; [slot] means the real slot text.
 
 Return JSON matching the required schema:
 - reply: the ONE short message the lead sees. Plain text only — never JSON, tags, markup or state.
@@ -233,7 +257,12 @@ Return JSON matching the required schema:
       // No conversationId — open a new thread and seed it with the scripted intro.
       if (!conversationId) {
         const newId = crypto.randomUUID()
-        const intro = agent.script?.intro || `hey! thanks for reaching out 👋`
+        // The intro is sent verbatim with no LLM in between, so a stored script
+        // from before placeholder validation would show "[Name]" to the lead.
+        const scriptedIntro = agent.script?.intro
+        const intro = scriptedIntro && findPlaceholders(scriptedIntro).length === 0
+          ? scriptedIntro
+          : `hey! thanks for reaching out 👋`
         await db.collection('conversations').doc(newId).set({
           id: newId, agentId,
           ownerUid: agent.ownerUid || null,
