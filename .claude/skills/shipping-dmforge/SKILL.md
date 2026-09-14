@@ -60,12 +60,12 @@ one or two attempts chasing a bridge-only failure.
 
 ## The real deploy path
 
-Push to `main` → **GitHub Actions** (`.github/workflows/deploy.yml`) drives
-`vercel pull` → `vercel build --prod` → `vercel deploy --prebuilt --prod` using
-repo secrets `VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID`. This workflow
-**self-skips (yellow, not red)** if those secrets are unset — a green check
-doesn't guarantee a deploy happened; check the "Guard on required secrets" step
-output, or just check whether `dmforge.org` actually changed.
+Push to `main` → **Vercel's Git integration** builds and deploys production;
+any other branch gets a preview deployment. There is no deploy workflow in
+GitHub Actions (`deploy.yml` was removed 2026-09-14 — it was a workaround for the
+integration's 2026-06-30 → September outage and never actually deployed).
+Confirm what production runs with `vercel inspect www.dmforge.org` or by probing
+a behaviour the change introduced — not from a GitHub Actions run.
 
 Never run `vercel deploy --prod` or push to `main` yourself without the user's
 go-ahead — that's the `deploy-cicd` agent's stated rule too, not just this
