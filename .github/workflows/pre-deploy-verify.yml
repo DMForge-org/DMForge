@@ -4,62 +4,54 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   verify:
-    name: Build & Test
+    name: Commit lint
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'yarn'
+          # The PR's own commits are needed to lint the range, not just the tip.
+          fetch-depth: 0
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Lint commit message
-        run: |
-          COMMIT_MSG="$(git log -1 --pretty=%B)"
-          if ! echo "$COMMIT_MSG" | grep -qE '^(feat|fix|chore|docs|perf|refactor|test):'; then
-            echo "❌ Commit message must start with: feat:, fix:, chore:, docs:, perf:, refactor:, or test:"
-            echo "   Got: $COMMIT_MSG"
-            exit 1
-          fi
-          echo "✓ Commit message follows Conventional Commits"
-
-      - name: Build with Turbopack
-        run: yarn build
+      # Lints every commit the PR brings in. This used to read `git log -1`,
+      # which on a pull_request checkout is GitHub's synthetic "Merge X into Y"
+      # commit — so it failed on every PR ever opened — and its regex also
+      # rejected scoped subjects like `fix(agent): …`.
+      - name: Lint commit messages (Conventional Commits)
         env:
-          # Build succeeds without these; only needed for prerender (which Vercel has)
-          NEXT_PUBLIC_FIREBASE_API_KEY: "placeholder"
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "placeholder"
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID: "placeholder"
-
-      - name: Check for uncommitted changes
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          if ! git diff --quiet; then
-            echo "❌ Build produced uncommitted changes:"
-            git diff
+          pattern='^(feat|fix|chore|docs|perf|refactor|test)(\([a-z0-9._/-]+\))?!?: .+'
+          bad=0
+          while IFS= read -r line; do
+            sha="${line%% *}"
+            subject="${line#* }"
+            if echo "$subject" | grep -qE "$pattern"; then
+              echo "✓ $sha $subject"
+            else
+              echo "::error::Commit $sha does not follow Conventional Commits: $subject"
+              bad=1
+            fi
+          done < <(git log --no-merges --format='%h %s' "$BASE_SHA..$HEAD_SHA")
+          if [ "$bad" -ne 0 ]; then
+            echo "Expected: type(optional-scope): subject — types: feat, fix, chore, docs, perf, refactor, test"
             exit 1
           fi
-          echo "✓ No uncommitted changes after build"
 
-      - name: E2E smoke test (production)
-        run: yarn test:e2e
-        continue-on-error: true  # Tests run against production; allow failure for now
-        timeout-minutes: 5
-
-      - name: Report results
+      # The build is gated by ci.yml (which also runs on pull_request), and the
+      # Playwright suite exercises live auth + Gemini against production, so it
+      # stays manual in e2e.yml rather than running on every PR.
+      - name: Merge checklist
         if: always()
         run: |
-          echo "✓ Pre-deploy verification complete"
-          echo ""
-          echo "Checklist before merge:"
-          echo "  [ ] Code reviewed by team member"
+          echo "Before merge:"
+          echo "  [ ] CI (build, unit specs, secret scan) is green"
           echo "  [ ] No Sentry errors in last 24h (https://sentry.io)"
           echo "  [ ] Firestore indexes deployed (if schema changed)"
           echo "  [ ] Firebase secrets in Secret Manager (if new functions)"
