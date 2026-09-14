@@ -24,7 +24,6 @@ export const metadata = {
   },
   twitter: { card: 'summary_large_image', title: 'DMForge — AI DM setters in 60 seconds', description: 'Build, test and ship a DM appointment setter in 60 seconds. Free forever tier.' },
   alternates: { canonical: '/' },
-  icons: { icon: '/favicon.ico' },
 }
 
 export default function RootLayout({ children }) {
@@ -34,7 +33,7 @@ export default function RootLayout({ children }) {
         <script dangerouslySetInnerHTML={{__html:'window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);'}} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
           '@context':'https://schema.org','@graph':[
-            {'@type':'Organization','@id':baseUrl+'/#org','name':'DMForge','url':baseUrl,'logo':baseUrl+'/favicon.ico','sameAs':[]},
+            {'@type':'Organization','@id':baseUrl+'/#org','name':'DMForge','url':baseUrl,'logo':baseUrl+'/apple-icon.png','sameAs':[]},
             {'@type':'WebSite','@id':baseUrl+'/#site','url':baseUrl,'name':'DMForge','publisher':{'@id':baseUrl+'/#org'}},
             {'@type':'SoftwareApplication','name':'DMForge','operatingSystem':'Web','applicationCategory':'BusinessApplication','description':'Build, test and ship an AI DM appointment setter in 60 seconds. Free forever tier.','offers':[{'@type':'Offer','price':'0','priceCurrency':'USD','name':'Free'},{'@type':'Offer','price':'39','priceCurrency':'USD','name':'Pro Monthly'},{'@type':'Offer','price':'390','priceCurrency':'USD','name':'Pro Annual'},{'@type':'Offer','price':'199','priceCurrency':'USD','name':'Agency'}],'aggregateRating':{'@type':'AggregateRating','ratingValue':'4.9','reviewCount':'500'}},
           ]
