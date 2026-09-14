@@ -8,26 +8,21 @@ whenever you catch a new piece of drift — that's the whole point of it existin
 
 - **Doc claim** (`DEPLOYMENT.md` §1, §5): "Deploy trigger: Git push to `main`
   branch (via Vercel GitHub integration)."
-- **Reality**: that native integration has been dead since a 2026-06-30 git
-  history rewrite. `.github/workflows/deploy.yml` was added specifically to
-  replace it — it drives the Vercel CLI directly using `VERCEL_TOKEN` /
-  `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` repo secrets, and self-skips (yellow)
-  if they're unset. **Check whether those secrets are actually set** (a recent
-  Actions run shows `skip=true` on the "Guard on required secrets" step if
-  not) before assuming a push to `main` ships anything.
-- The `deploy-cicd` agent (`.claude/agents/deploy-cicd.md`) owns fully
-  reconciling this — don't independently "fix" it by re-enabling the dashboard
-  integration or rewriting the workflow without checking with the user; if you
-  find the secrets are set and a recent deploy run is green, that's your
-  confirmation this path is live and it's fine to rely on it.
+- **Reality (as of 2026-09-14)**: the doc is correct again. The integration was
+  dead from a 2026-06-30 git history rewrite until some point after
+  2026-09-07; merging PR #9 (`472d4a1`) went live 2 seconds later with the
+  `dm-forge-git-main-*` alias. The GitHub Actions workaround (`deploy.yml`) was
+  removed the same day — its `VERCEL_*` secrets were never set, so it skipped
+  every run, and setting them now would deploy every push twice.
 
 ## Build tool
 
 - **Doc claim**: "Build: `yarn build` with Turbopack" (Next 16's default).
-- **Reality**: Turbopack has been broken in this repo (pre-existing, not
-  introduced by any specific change). Every verified build in this repo's
-  history used `next build --webpack` instead. Use `--webpack` explicitly;
-  don't assume plain `yarn build`/`next build` will tell you anything useful.
+- **Reality (as of 2026-09-14)**: plain `next build` (Turbopack) works — it
+  compiled 69/69 pages repeatedly during the September audit, and CI's
+  `yarn build` is green. The earlier "Turbopack is broken, use `--webpack`"
+  note is stale. On the Windows dev machine `yarn` itself is broken (corepack
+  shim missing), so run `npx next build` there.
 
 ## Scheduler (SMS reminders)
 
