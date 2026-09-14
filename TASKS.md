@@ -216,9 +216,15 @@ Branch `fix/agent-architecture-audit`.
   `app/icon.svg` and `app/apple-icon.png` (180) rendered from the `components/logo.jsx` brand tile,
   dropped the manual `metadata.icons`, and pointed the JSON-LD Organization `logo` at
   `/apple-icon.png`. Swap in the official exports from `dmforge-brand.md` if they turn up.
+- `sendReminders` moved off `nodejs20` (Google decommission 2026-10-30) to `nodejs24` (supported to
+  2028-10-31): `functions/package.json` `engines.node` 20 → 24, deployed with
+  `npx firebase-tools@15.30.1 deploy --only functions:sendReminders`. `gcloud` shows revision
+  `sendreminders-00002-kuj` ACTIVE on `nodejs24`; the Cloud Scheduler job stays enabled.
 
 ### Still open
-- The deployed `sendReminders` Cloud Function runs `nodejs20` (end-of-life April 2026).
+- Functions package: `firebase-functions` 6.6.0 is flagged outdated by the CLI (7.x has breaking
+  changes) and `npm audit --omit=dev` reports 13 vulnerabilities (1 high) — not bumped without approval.
+- The global `firebase` CLI install is broken (module missing); use `npx firebase-tools@<version>`.
 - Dependabot reports 20 vulnerabilities on `main` (10 high) — not bumped without approval.
 - `yarn` is broken on the dev machine (global corepack shim missing). The pinned 1.22.22 is still in
   corepack's cache: `node "$LOCALAPPDATA/node/corepack/v1/yarn/1.22.22/bin/yarn.js" <cmd>`, or
