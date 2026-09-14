@@ -212,9 +212,12 @@ Branch `fix/agent-architecture-audit`.
   Browser pass clean; zero error/warning log lines. QA Firestore docs and the auth user deleted.
 - The icon-only send buttons had no accessible name: labelled "Send reply" (homepage simulator) and
   "Log message" (inbox thread). Build + CI green, live in production.
+- `/favicon.ico` 404 fixed: the repo had no icon file at all. Added `app/favicon.ico` (16/32/48),
+  `app/icon.svg` and `app/apple-icon.png` (180) rendered from the `components/logo.jsx` brand tile,
+  dropped the manual `metadata.icons`, and pointed the JSON-LD Organization `logo` at
+  `/apple-icon.png`. Swap in the official exports from `dmforge-brand.md` if they turn up.
 
 ### Still open
-- `/favicon.ico` 404s (linked from the homepage) — still 404 on 2026-09-14.
 - The deployed `sendReminders` Cloud Function runs `nodejs20` (end-of-life April 2026).
 - Dependabot reports 20 vulnerabilities on `main` (10 high) — not bumped without approval.
 - `yarn` is broken on the dev machine (global corepack shim missing). The pinned 1.22.22 is still in
