@@ -247,7 +247,7 @@ export default function InboxPage() {
             <div className="p-3 border-t border-[#2A2A55] flex gap-2">
               <Input aria-label="Message to log" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                 placeholder="Log an outbound message…" className="bg-[#161630] border-[#2A2A55] text-sm" />
-              <Button onClick={sendMessage} className="btn-primary border-0 px-3"><Send className="w-4 h-4" /></Button>
+              <Button onClick={sendMessage} aria-label="Log message" className="btn-primary border-0 px-3"><Send className="w-4 h-4" /></Button>
             </div>
           </div>
         </div>

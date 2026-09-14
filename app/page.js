@@ -163,7 +163,7 @@ function ChatSimulator({ agent, onSave }) {
         ) : (
           <div className="flex gap-2">
             <Input aria-label="Reply as the lead" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder="Reply as the lead…" className="bg-[#0B0B1A] border-[#2A2A55] text-white" disabled={busy} />
-            <Button onClick={send} disabled={busy || !input.trim()} className="btn-primary border-0"><Send className="w-4 h-4" /></Button>
+            <Button onClick={send} disabled={busy || !input.trim()} aria-label="Send reply" className="btn-primary border-0"><Send className="w-4 h-4" /></Button>
           </div>
         )}
         {!state.booked && messages.length > 2 && (
