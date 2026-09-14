@@ -1,0 +1,3 @@
+# False positives only. Each line is a gitleaks finding fingerprint (commit:file:rule:line).
+# DEPLOYMENT.md Twilio troubleshooting example: 'curl -u {accountSid}:{authToken}' is a template, not a credential.
+26ec548d545b465d0729357ef539058d614e1a4f:DEPLOYMENT.md:curl-auth-user:359
