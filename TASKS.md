@@ -192,7 +192,20 @@ Branch `fix/agent-architecture-audit`.
 - `email-channel.spec.js` had asserted a sign-in message that `proxy.js` (2026-07-09) made
   unreachable by redirecting signed-out `/settings/*` requests; it now asserts the 307.
 
+### Deploy + follow-up (merged as `472d4a1`)
+- PR #9 merged; Vercel's Git integration deployed it to production 2 s later — the integration is
+  working again. `prod-verify` against production: 52/52 sitemap pages 200, authenticated journey
+  16/16, browser pass clean, zero 5xx/error logs. QA artifacts deleted.
+- `deploy.yml` removed: its CLI deploy skipped every run (secrets never set) and would double-deploy
+  alongside the integration if they were.
+- Generated DM scripts leaked unfilled placeholders to leads (`[Name]`, `[mention post topic…]`) —
+  9 of 17 stored agents affected. `/api/agent/create` now forbids them in the prompt, validates
+  every lead-facing field (`lib/scriptText.js`), retries once, and returns 502 rather than saving a
+  broken script; `/api/agent/chat` falls back to a default intro for stored scripts that still
+  carry one and tells the model never to show square brackets.
+
 ### Still open
+- `/favicon.ico` 404s (linked from the homepage).
 - The deployed `sendReminders` Cloud Function runs `nodejs20` (end-of-life April 2026).
 - Dependabot reports 20 vulnerabilities on `main` (10 high) — not bumped without approval.
 - `yarn` is broken on the dev machine (corepack shim missing); `npx next build` is the same build.
