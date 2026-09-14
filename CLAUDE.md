@@ -8,7 +8,7 @@ AI DM appointment-setter SaaS for online coaches. Next.js App Router serverless 
 - **Firebase**: Auth (email/password + Google) on the client, Admin SDK on the server. Firestore uses the **named database `dmforge`** (not `(default)`) — always go through [lib/firebaseAdmin.js](lib/firebaseAdmin.js) server-side and [lib/firebase.js](lib/firebase.js) client-side.
 - **LLM**: Google Gemini via a hand-rolled `fetch` to the REST API (no AI SDK) — see [lib/llm.js](lib/llm.js). `GEMINI_BASE_URL` optionally routes traffic through Cloudflare AI Gateway.
 - **Payments**: Stripe subscriptions — see [lib/stripe.js](lib/stripe.js) and the webhook handler under `app/api`.
-- **UI**: shadcn/ui (Radix primitives) + Tailwind CSS. Components live in `components/`, shadcn config in [components.json](components.json).
+- **UI**: shadcn/ui (Radix primitives) + Tailwind CSS. Components live in `components/`, shadcn config in [components.json](components.json). Working with Figma designs (tokens, components, assets, icons, styling conventions)? See [FIGMA-DESIGN-SYSTEM.md](FIGMA-DESIGN-SYSTEM.md) first.
 
 ## Commands
 
