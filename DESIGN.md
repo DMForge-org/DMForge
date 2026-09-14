@@ -59,6 +59,8 @@ This document records **why** the system is built the way it is.
   placeholder values.
 - **Dark theme only.** Light mode is a possible future evolution, not currently supported
   (`dark` class is hardcoded in `app/layout.js`).
+- **No `public/` directory and no image assets tracked in git.** `app/layout.js` references `/favicon.ico`, which doesn't exist — broken. Brand files listed in `dmforge-brand.md` (icon PNGs, wordmarks) live outside the repo, not in version control.
+- **`framer-motion` and `next-themes` are installed but unused** (zero imports of either) — dead dependencies, safe to remove or wire up.
 - Root directory carries a few loose scripts (`create-firestore.js`, `smoke.spec.js`) flagged by the
   module scanner; Next.js config files legitimately live at root.
 
@@ -66,6 +68,7 @@ This document records **why** the system is built the way it is.
 
 | Date | Change |
 |------|--------|
+| 2026-09-07 | Figma MCP integration doc added (`FIGMA-DESIGN-SYSTEM.md`, linked from `CLAUDE.md`); confirmed no `public/` dir, broken favicon, `framer-motion`/`next-themes` unused |
 | 2026-07-07 | Design-token fix (shadcn HSL triples), anti-slop pass across all pages, WCAG AA button/badge contrast, `.impeccable.md` design context established |
 | 2026-07-06 | Unified brand `Logo` component across pages (990872d); closed open items 1–4: auto-deploy diagnosis, leads/inbox pipeline plan, env docs (c992a0c) |
 | 2026-07-05 | Composite Firestore indexes for reminders cron + GHL webhook (bef5030) |
