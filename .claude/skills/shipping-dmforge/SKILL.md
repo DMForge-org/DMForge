@@ -34,7 +34,7 @@ Copy this and check items off as you verify them — don't skip to "looks fine":
 
 ```
 - [ ] Working tree reviewed: `git status --short` — nothing unexpected staged/unstaged
-- [ ] Build compiles: `next build --webpack` (see "Build" below — NOT plain `next build`)
+- [ ] Build compiles: `yarn build` — plain `next build` on Turbopack, same as CI and Vercel (see "Build" below)
 - [ ] No secrets in the diff: `git diff --cached | grep -iE "sk_live|AIza|whsec_|api[_-]?key"` (spot-check, not exhaustive — gitleaks in ci.yml is the real gate)
 - [ ] New env vars (if any) added to `.env.example` AND actually set in Vercel
 - [ ] Firestore composite indexes deployed if a new query needs one: `firebase deploy --only firestore:indexes`
@@ -45,12 +45,13 @@ Copy this and check items off as you verify them — don't skip to "looks fine":
 
 ## Build
 
-**Don't run plain `next build`.** Turbopack (Next 16's default) is broken in
-this repo as of the last verified check — pre-existing, not something to "fix"
-casually. Validate with webpack instead:
+Run the same build CI and Vercel run: plain `next build` (Turbopack, Next 16's
+default). The old "Turbopack is broken, use `--webpack`" advice is stale — the
+Turbopack build compiles 72/72 pages cleanly (re-verified 2026-09-15) and Vercel
+deploys with `bundler: turbopack`.
 
 ```bash
-yarn build --webpack     # or: ./node_modules/.bin/next build --webpack
+yarn build     # Windows dev machine (yarn shim broken): node node_modules/next/dist/bin/next build
 ```
 
 If this is being run from the remote-devices bridge (Linux VM) rather than the

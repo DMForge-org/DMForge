@@ -54,8 +54,11 @@ whenever you catch a new piece of drift — that's the whole point of it existin
 
 As of 2026-09-14 every workflow that sets up Node uses 22 (`pre-deploy-verify.yml`
 no longer installs Node — it only lints commits). The deployed `sendReminders`
-Cloud Function still runs `nodejs20`, past end-of-life since April 2026; moving
-it is a `firebase deploy --only functions`, which needs user approval.
+Cloud Function runs `nodejs24` since 2026-09-14 (`functions/package.json`
+`engines.node`). Any change under `functions/` (lockfile included) only reaches
+production through `npx firebase-tools@15.30.1 deploy --only functions:sendReminders`
+— a push to `main` does not deploy it. Set `FUNCTIONS_DISCOVERY_TIMEOUT=60` on
+this machine or the CLI's local code discovery times out.
 
 ---
 
