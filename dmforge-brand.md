@@ -22,6 +22,17 @@ Radius: `12px` (UI). App icon uses a larger ~22% tile radius.
 
 Display: **Fraunces** (500/600/700) · Body: **IBM Plex Sans** (400/500/600)
 
+## Logo mark — "Bubble D" (official, 2026-09-15)
+
+The D of DM drawn as a message bubble: white knockout on the coral tile, tail at the bottom-left.
+Chosen 2026-09-15 from four directions; replaces the earlier send-arrow mark everywhere.
+
+- **Source of truth in code:** [app/icon.svg](app/icon.svg) — the same path is inlined in
+  [components/logo.jsx](components/logo.jsx) (`BrandIcon`), and `app/favicon.ico` (16/32/48) +
+  `app/apple-icon.png` (180, flattened onto coral) are rendered from it.
+- **Master artwork:** `D:\Business HQ\Brands Logos\DMForge Logo.pdf` (outside the repo).
+- Tile radius stays ~22% (`rx="14"` on a 64 grid); mark is always white on coral, never recoloured.
+
 ## Logo files
 
 - App icon / favicon / LinkedIn: `dmforge-icon-512.png` (square). Sizes 32–1024 + `dmforge-icon.svg`.

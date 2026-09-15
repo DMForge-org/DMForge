@@ -118,16 +118,17 @@ task; it's not part of this project's workflow (solo-maintained, per DESIGN.md's
 all (verified: `git ls-files | grep -iE '\.(svg|png|ico|jpg|jpeg|webp|gif)$'` returns nothing). This is the
 biggest gap for Figma asset handoff:
 
-- The only actual visual brand asset *in code* is an inline `<svg>` in `components/logo.jsx` (a hand-coded
-  arrow/send mark) — this is the real source of truth for the app icon shape, not any external file.
+- The visual brand assets *in code* are `app/icon.svg` (the official "Bubble D" mark — the real source of
+  truth for the app icon shape) plus the same path inlined in `components/logo.jsx`, and the two rasters
+  rendered from it, `app/favicon.ico` and `app/apple-icon.png`. Master artwork lives outside the repo at
+  `D:\Business HQ\Brands Logos\DMForge Logo.pdf`.
 - [dmforge-brand.md](dmforge-brand.md) documents a set of exported brand files by name (`dmforge-icon-512.png`,
   `dmforge-wordmark-dark.png`, `favicon.ico`, etc.) — **these are not present in the repo.** They're either
   hosted externally or exist only on the user's machine outside version control. Don't assume they're
   importable from a project path; ask where they actually live before wiring up an `<Image>` reference to
   one.
-- `app/layout.js` sets `metadata.icons = { icon: '/favicon.ico' }`, but no `favicon.ico` exists anywhere in
-  the repo (root or an `app/` file-convention icon). **This is currently broken** — worth flagging back to
-  the user rather than silently working around it if a Figma task touches the icon/favicon.
+- Icons are wired through Next's `app/` file conventions (`icon.svg`, `favicon.ico`, `apple-icon.png`), not
+  a hand-written `metadata.icons` entry — fixed in `dfe10cc` and re-rendered for the Bubble D mark.
 - `next.config.js` sets **`images: { unoptimized: true }`** — deliberate (Hobby-plan cost tradeoff per
   DESIGN.md), meaning `next/image` gets zero lazy-loading/optimization benefit here. When bringing in a new
   image from Figma, `next/image` is still fine for markup consistency, but don't expect it to do anything
