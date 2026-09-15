@@ -42,13 +42,20 @@ whenever you catch a new piece of drift — that's the whole point of it existin
   loses `admin.apps` and its `jose@6` dependency can't be `require()`'d —
   this 500s *every* API route on Vercel, and it's invisible to `yarn build`
   and CI (only shows up on a live route). If a workflow or dependency-update
-  tool suggests bumping it, don't, without proving a live API route works on
-  a preview deploy first.
+  tool suggests bumping it, don't, without proving a live API route works first.
+- **Vercel Preview has no Firebase Admin credentials.** Every API route on a
+  preview returns the JSON `"Firebase Admin SDK not configured"` 500 — that
+  proves the bundle loads (a module-init failure returns an empty body), not
+  that the routes work. Prove API routes with a local
+  `next start -H 127.0.0.1 -p 3100` against `.env.local` (live Firestore —
+  delete QA docs by id), crawl the preview's pages, then re-verify production
+  right after deploy.
 - The rest of `package.json` intentionally pins canary/beta/rc versions
   (`react@19.3.0-canary-*`, `zod@4.5.0-canary-*`, `react-hook-form@8.0.0-beta.2`,
-  `next@16.3.0-preview.5`, `@playwright/test@1.62.0-alpha-*`) — this is a
-  deliberate bleeding-edge stance, not drift. Don't "fix" it by pinning to
-  stable unless the user asks.
+  `@playwright/test@1.62.0-alpha-*`) — this is a deliberate bleeding-edge
+  stance, not drift. Don't "fix" it by pinning to stable unless the user asks.
+  `next` moved from `16.3.0-preview.5` to stable `16.3.3` on 2026-09-15 at the
+  user's request, for two critical RCE advisories.
 
 ## Node versions
 
