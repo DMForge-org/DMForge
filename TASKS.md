@@ -228,11 +228,36 @@ Branch `fix/agent-architecture-audit`.
   attempt timed out in the CLI's local code discovery (10 s default, busy dev machine) before
   uploading; `FUNCTIONS_DISCOVERY_TIMEOUT=60` fixed it.
 
+### fast-xml-parser security fix (2026-09-15, `bdaf2f9` + `16394ca`)
+- GHSA-8r6m-32jq-jx6q (high; `fast-xml-parser` 5.9.3–5.10.0, transitive via `firebase-admin` >
+  `@google-cloud/storage`) was in both lockfiles. `functions/package-lock.json` → 5.11.1 (`bdaf2f9`);
+  root `yarn.lock` 5.9.3 → 5.11.1 (`16394ca`), lockfile-only — a temporary `resolutions` entry let
+  yarn rewrite the lock and was removed, so `package.json` is unchanged. Dependabot #5 and #6
+  closed. Neither the app nor the function imports Storage, and the package's CJS bundle doesn't
+  `require()` the now ESM-only `@nodable/entities@3`, so no runtime path changes.
+- Verified: clean `npm ci` of the functions lock + module load, `yarn install --frozen-lockfile`,
+  Turbopack `next build` (72/72 pages), CI green. `sendReminders` redeployed as revision
+  `sendreminders-00005-wuk` (100% traffic); its first scheduled run logged "nothing due".
+- `prod-verify` on deploy `dpl_3sZYKUDrmA3zKg2rTJU4pqLDJ65i`: 69/69 pages + icons 200, apex/http
+  308 → www, unknown share id 404, unsigned Stripe webhook 400. Authenticated journey 28/28 —
+  signup/provision, authed reads, agent create + chat, owner-only 403, prospects + webhooks CRUD
+  (live Stripe checkout skipped so no undeletable customer). Stored script: 0 placeholders by
+  `lib/scriptText.js`'s regex. Zero runtime errors or 5xx. QA agent, conversation and auth user
+  deleted.
+
 ### Still open
-- Functions package: `npm audit --omit=dev` reports 9 vulnerabilities (1 high: `fast-xml-parser`
-  5.9.3–5.10.0, transitive) — not bumped without approval.
+- Functions package: `npm audit --omit=dev` reports 8 moderate (`uuid` < 11.1.1 via `google-gax`,
+  `gaxios`, `teeny-request`). The only fix is `firebase-admin@14`, which is blocked (see the pin note
+  in `.claude/skills/shipping-dmforge/references/reconciled-facts.md`).
+- Next.js criticals (fixed in 16.3.3; `next@16.3.0-preview.5` is pinned): GHSA-p293-qw3h-jr36 is
+  RCE when the server runs on a Windows filesystem, GHSA-2xp9-vwfh-vxw4 is RCE via sharp's AVIF
+  optimization. Vercel production isn't exposed (Linux; `images.unoptimized: true`), but `yarn dev`
+  on the Windows dev machine binds `0.0.0.0` and is. Not bumped without approval.
+- The `postcss: 8.5.10` resolution now pins postcss below its patched 8.5.23 (Dependabot #9, #11,
+  #16) — the security pin itself blocks the fix.
 - The global `firebase` CLI install is broken (module missing); use `npx firebase-tools@<version>`.
-- Dependabot reports 20 vulnerabilities on `main` (10 high) — not bumped without approval.
+- Dependabot: 23 open alerts on `main` after `16394ca` (2 critical, 11 high, 9 medium, 1 low) — not
+  bumped without approval.
 - `yarn` is broken on the dev machine (global corepack shim missing). The pinned 1.22.22 is still in
   corepack's cache: `node "$LOCALAPPDATA/node/corepack/v1/yarn/1.22.22/bin/yarn.js" <cmd>`, or
   reinstall corepack and `corepack enable`.
