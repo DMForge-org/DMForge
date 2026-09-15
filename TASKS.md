@@ -220,10 +220,15 @@ Branch `fix/agent-architecture-audit`.
   2028-10-31): `functions/package.json` `engines.node` 20 → 24, deployed with
   `npx firebase-tools@15.30.1 deploy --only functions:sendReminders`. `gcloud` shows revision
   `sendreminders-00002-kuj` ACTIVE on `nodejs24`; the Cloud Scheduler job stays enabled.
+- `firebase-functions` 6.6.0 → 7.3.2 (2026-09-15). None of the v7 breaking changes apply
+  (`functions.config()` removal, Node 16 drop, TS 5, emulator `onRequest`, v1 `LegacyEvent`);
+  `firebase-admin` stays 13.x. Deployed as revision `sendreminders-00004-hab`. The first deploy
+  attempt timed out in the CLI's local code discovery (10 s default, busy dev machine) before
+  uploading; `FUNCTIONS_DISCOVERY_TIMEOUT=60` fixed it.
 
 ### Still open
-- Functions package: `firebase-functions` 6.6.0 is flagged outdated by the CLI (7.x has breaking
-  changes) and `npm audit --omit=dev` reports 13 vulnerabilities (1 high) — not bumped without approval.
+- Functions package: `npm audit --omit=dev` reports 9 vulnerabilities (1 high: `fast-xml-parser`
+  5.9.3–5.10.0, transitive) — not bumped without approval.
 - The global `firebase` CLI install is broken (module missing); use `npx firebase-tools@<version>`.
 - Dependabot reports 20 vulnerabilities on `main` (10 high) — not bumped without approval.
 - `yarn` is broken on the dev machine (global corepack shim missing). The pinned 1.22.22 is still in
