@@ -259,15 +259,43 @@ Branch `fix/agent-architecture-audit`.
   unchanged, authenticated journey 28/28, zero runtime errors or 5xx. QA agents, conversations and
   auth users from both runs deleted.
 
+### postcss 8.5.23, stale resolution dropped (2026-09-15, `4602711`)
+- Closes GHSA-6g55-p6wh-862q, GHSA-r28c-9q8g-f849, GHSA-fxqj-rqcc-2cmp (Dependabot #9, #11, #16).
+  Two vulnerable copies existed: the `resolutions` pin forced every transitive request to 8.5.10
+  (dragging next 16.3.3's patched 8.5.23 back down), and the devDependency was 8.5.16. Both now
+  8.5.23 — one hoisted copy shared by next, tailwindcss and the devDependency; `nanoid` follows to
+  3.3.19. The nested copies under `next/`, `tailwindcss/` and `autoprefixer/` are gone.
+- The pin was never a DMForge decision: it arrived with the Emergent.sh scaffold (`c73822c`, the same
+  7-entry block found verbatim in other Emergent repos) as a *minimum* version for GHSA-qx2v-qp2m-jg93
+  (< 8.5.10) written as an *exact* version, which yarn 1 treats as a hard override. The remaining
+  template pins (`follow-redirects`, `form-data`, the three picomatch globs, `yaml`) will go stale the
+  same way — review them separately; `form-data@4.0.6` already warns on every install.
+- Removing the pin alone would NOT have worked: yarn 1 only re-resolves a lock entry when the locked
+  version fails its own range, so tailwind's `postcss@^8.4.47` would have stayed on 8.5.10. Recipe
+  used (no hand-editing of yarn.lock): retarget the existing pin to 8.5.23 → `yarn install` → delete
+  the pin → `yarn install --skip-integrity-check` → lockfile sha1 unchanged, proving the pin was dead.
+- 8.5.23, not 8.5.28: from 8.5.24 postcss writes a leading BOM back out and Turbopack's CSS pass fails
+  on it (postcss#2133, PR #2136 open). 8.5.23 is also exactly what next 16.3.3 pins.
+- Verified: single `postcss@8.5.23, postcss@^8.4.47` lock key, `--frozen-lockfile` clean with no
+  postcss warning, diff limited to postcss + nanoid hunks. Clean build (`.next` deleted, Turbopack
+  cache purged) — compiled CSS **byte-identical** to the previous build (normalized sha256
+  `e2e18e5c…`, 78,748 bytes, no BOM), and the bundled Turbopack processor is now `8.5.23`. CI green on
+  branch and `main`; preview `dpl_3S8frhMHDE8QDkUGzf3uhZCVDV16` and production
+  `dpl_Hes2G8E4ofKS1FUeQLtNF8LEvaew` both serve CSS identical to baseline; 69/69 pages 200; zero
+  runtime errors. Vercel's install actually ran (48 s) and no longer prints the postcss resolution
+  warning. No runtime exposure existed either way: no postcss/tailwind/autoprefixer entry appears in
+  any `.nft.json` trace.
+- After any future `next` bump, re-check `grep -c '^postcss@' yarn.lock` is 1 — a new exact pin from
+  next can split the tree again.
+
 ### Still open
 - Functions package: `npm audit --omit=dev` reports 8 moderate (`uuid` < 11.1.1 via `google-gax`,
   `gaxios`, `teeny-request`). The only fix is `firebase-admin@14`, which is blocked (see the pin note
   in `.claude/skills/shipping-dmforge/references/reconciled-facts.md`).
-- The `postcss: 8.5.10` resolution now pins postcss below its patched 8.5.23 (Dependabot #9, #11,
-  #16) — the security pin itself blocks the fix.
 - The global `firebase` CLI install is broken (module missing); use `npx firebase-tools@<version>`.
-- Dependabot: 17 open alerts on `main` after `fc70459` (0 critical, 7 high, 9 medium, 1 low) — not
-  bumped without approval.
+- Dependabot: 14 open alerts on `main` after `4602711` (0 critical, 5 high, 8 medium, 1 low) — not
+  bumped without approval. Remaining: nodemailer ×4, dompurify ×2, browserslist ×2, brace-expansion ×2,
+  uuid, protobufjs, fflate, baseline-browser-mapping.
 - `yarn` is broken on the dev machine (global corepack shim missing). The pinned 1.22.22 is still in
   corepack's cache: `node "$LOCALAPPDATA/node/corepack/v1/yarn/1.22.22/bin/yarn.js" <cmd>`, or
   reinstall corepack and `corepack enable`.
