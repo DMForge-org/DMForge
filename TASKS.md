@@ -245,18 +245,28 @@ Branch `fix/agent-architecture-audit`.
   `lib/scriptText.js`'s regex. Zero runtime errors or 5xx. QA agent, conversation and auth user
   deleted.
 
+### Next.js 16.3.3 security bump (2026-09-15, `fc70459`)
+- `next` 16.3.0-preview.5 → 16.3.3 (user-approved) for GHSA-p293-qw3h-jr36 (RCE on Windows-hosted
+  servers) and GHSA-2xp9-vwfh-vxw4 (RCE via sharp's AVIF optimization). The lock change stays inside
+  next's own tree: `@next/*` 16.3.3, `@swc/helpers` 0.5.23, `sharp` 0.34.5 → 0.35.4. Dependabot #38 and
+  #40 (critical) and #8 and #36 (sharp, high) closed. The `postcss: 8.5.10` resolution still overrides
+  next's `postcss@8.5.23` request (yarn warns). 16.3.4/16.3.5 exist — backported bug fixes only.
+- Verified: Turbopack build (route table identical to preview.5; static-worker count 72 → 71), CI green
+  on the branch and on `main`. Vercel Preview has no Firebase Admin credentials, so preview API routes
+  return the JSON "not configured" 500 (bundle loads fine) while its 69 pages all return 200; the API
+  was proven on a local `next start -H 127.0.0.1` against `.env.local` — journey 28/28.
+- Production `dpl_54QRGJWrPFeSzpStPTgU4Jk6s9dx`: 69/69 pages 200, redirects and function probes
+  unchanged, authenticated journey 28/28, zero runtime errors or 5xx. QA agents, conversations and
+  auth users from both runs deleted.
+
 ### Still open
 - Functions package: `npm audit --omit=dev` reports 8 moderate (`uuid` < 11.1.1 via `google-gax`,
   `gaxios`, `teeny-request`). The only fix is `firebase-admin@14`, which is blocked (see the pin note
   in `.claude/skills/shipping-dmforge/references/reconciled-facts.md`).
-- Next.js criticals (fixed in 16.3.3; `next@16.3.0-preview.5` is pinned): GHSA-p293-qw3h-jr36 is
-  RCE when the server runs on a Windows filesystem, GHSA-2xp9-vwfh-vxw4 is RCE via sharp's AVIF
-  optimization. Vercel production isn't exposed (Linux; `images.unoptimized: true`), but `yarn dev`
-  on the Windows dev machine binds `0.0.0.0` and is. Not bumped without approval.
 - The `postcss: 8.5.10` resolution now pins postcss below its patched 8.5.23 (Dependabot #9, #11,
   #16) — the security pin itself blocks the fix.
 - The global `firebase` CLI install is broken (module missing); use `npx firebase-tools@<version>`.
-- Dependabot: 23 open alerts on `main` after `16394ca` (2 critical, 11 high, 9 medium, 1 low) — not
+- Dependabot: 17 open alerts on `main` after `fc70459` (0 critical, 7 high, 9 medium, 1 low) — not
   bumped without approval.
 - `yarn` is broken on the dev machine (global corepack shim missing). The pinned 1.22.22 is still in
   corepack's cache: `node "$LOCALAPPDATA/node/corepack/v1/yarn/1.22.22/bin/yarn.js" <cmd>`, or
