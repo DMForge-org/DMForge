@@ -213,9 +213,11 @@ Branch `fix/agent-architecture-audit`.
 - The icon-only send buttons had no accessible name: labelled "Send reply" (homepage simulator) and
   "Log message" (inbox thread). Build + CI green, live in production.
 - `/favicon.ico` 404 fixed: the repo had no icon file at all. Added `app/favicon.ico` (16/32/48),
-  `app/icon.svg` and `app/apple-icon.png` (180) rendered from the `components/logo.jsx` brand tile,
-  dropped the manual `metadata.icons`, and pointed the JSON-LD Organization `logo` at
-  `/apple-icon.png`. Swap in the official exports from `dmforge-brand.md` if they turn up.
+  `app/icon.svg` and `app/apple-icon.png` (180), dropped the manual `metadata.icons`, and pointed
+  the JSON-LD Organization `logo` at `/apple-icon.png`. Superseded by `5971e54`: the official mark
+  is now Bubble D (the D of DM as a message bubble). `app/icon.svg` is the source of truth;
+  `favicon.ico` and `apple-icon.png` are rendered from it and `components/logo.jsx` inlines the same
+  path. Master artwork lives in Business HQ, outside the repo.
 - `sendReminders` moved off `nodejs20` (Google decommission 2026-10-30) to `nodejs24` (supported to
   2028-10-31): `functions/package.json` `engines.node` 20 → 24, deployed with
   `npx firebase-tools@15.30.1 deploy --only functions:sendReminders`. `gcloud` shows revision
