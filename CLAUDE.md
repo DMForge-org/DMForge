@@ -14,7 +14,7 @@ AI DM appointment-setter SaaS for online coaches. Next.js App Router serverless 
 
 - `yarn dev` — dev server on port 3000 (memory-capped for low-RAM environments)
 - `yarn build` — production build (must pass before shipping)
-- `yarn test:e2e` — Playwright e2e; targets **production** by default, override with `BASE_URL=http://localhost:3000`
+- `yarn test:e2e` — Playwright e2e; defaults to `http://localhost:3000`, override with `BASE_URL=https://www.dmforge.org` to target production
 - Package manager is **yarn 1.x** (`packageManager` pinned). Never use npm/pnpm; never touch `yarn.lock` by hand.
 
 ## Layout
