@@ -303,3 +303,45 @@ Branch `fix/agent-architecture-audit`.
   2026-09-14 checkout check (no charge; no Stripe key locally).
 - Simulator quality: the agent re-asked about timing after the lead had already given one, and
   `state.step` stayed at 1.
+
+---
+
+## Session log (2026-09-16) — `/api/health` dependency check + production re-verify
+
+### Shipped (`dfde975`, CI green, live in production)
+- `app/api/health/route.js` — unauthenticated `GET` probing Firestore (cheap `_health` collection
+  read), Stripe (`balance.retrieve()`) and Gemini (`models.get` metadata lookup, no generation
+  billed) in parallel. Returns `200` with per-check `{ok, latencyMs}` when all three are reachable,
+  `503` with the failing check's error otherwise. Rate-limited via the existing anonymous per-IP
+  limiter (`checkRateLimit`, 20/min) so it can't be used to hammer paid dependencies for free.
+  `GEMINI_BASE` and `MODEL` exported from `lib/llm.js` (previously module-private) so the check
+  reuses the exact base-URL/gateway-routing logic the real chat path uses, instead of duplicating it.
+- Verified locally first: `next build` clean (71 routes, `/api/health` listed as dynamic), then a
+  local `next start` against `.env.local`'s live Gemini + Firebase Admin creds — confirmed Firestore
+  and Gemini both `ok`, and Stripe correctly failed closed (`503`, clean error message) with no
+  Stripe key configured locally, proving the per-check isolation works before it ever reached prod.
+
+### Production re-verify (deploy `dpl_CNRbUBBqCBAX8HLVjPMBsaGVLEh5`)
+- Confirms nothing regressed since the postcss 8.5.23 bump (`4602711`, previous full verify).
+- `/api/health` on production: all three checks `ok` (Firestore ~400ms, Stripe ~248ms, Gemini ~271ms).
+- 52/52 sitemap URLs + 13 non-sitemap app routes (dashboard, settings/*, inbox, billing/success,
+  icons, robots.txt) 200. Apex/http → `https://www.dmforge.org/` 308 unchanged.
+- Unauthenticated API probes match expected shapes: owned routes 401, unsigned Stripe webhook 400,
+  unknown share id 404, unknown API route 404 — no 500s.
+- Full Playwright suite (37 tests, 13 spec files) against production: **37/37 green.** First pass
+  showed 10 failures — 4 were a stale local Chromium binary (`npx playwright install chromium`
+  fixed it), 6 were `429`s from the anonymous per-IP rate limiter colliding with this session's own
+  preceding manual curl probes on the same IP, not a regression. Re-running just those specs after
+  the window cleared: 11/11 pass. Zero Vercel runtime errors in the 2h window covering the deploy
+  and this entire verification pass.
+- Security headers (CSP, X-Frame-Options, etc.) confirmed present on the live response.
+
+### Pending (needs you)
+- One anonymous demo agent named "TestBot" (+ its conversation) was created by the Playwright
+  smoke suite's live wizard-build test during this verification. Deleting it needs a Firestore
+  bulk-delete, which this session's auto-mode classifier blocks by policy (reasonable — it can't
+  see the query is scoped to exactly `agentName=='TestBot' AND ownerUid==null`). Low-stakes
+  (anonymous, ownerless, identical in shape to real demo traffic) but flagging per the repo's
+  convention of cleaning up QA-created records. The script is at
+  `D:\Dev\System\Temp\claude\D--Dev-Workspaces-Active-DMForge\eb642a51-df26-43fa-a257-e2a521b089c5\scratchpad\cleanup-testbot.mjs`
+  if you want to run it, or delete the doc manually from the Firebase console.
