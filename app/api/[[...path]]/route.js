@@ -229,7 +229,7 @@ Every intro, ask, bookingMessage and disqualifyResponse is sent to real leads EX
         return handleCORS(request, NextResponse.json({ error: 'forbidden' }, { status: 403 }))
       }
 
-      const sys = `You are role-playing as ${agent.agentName}, an online ${agent.niche} coach, talking to a NEW LEAD over Instagram DM.
+      const buildSys = (lastStep) => `You are role-playing as ${agent.agentName}, an online ${agent.niche} coach, talking to a NEW LEAD over Instagram DM.
 Your offer: ${agent.offer}
 Ideal audience: ${agent.audience || 'general'}
 Must qualify on: ${agent.qualification}
@@ -237,6 +237,10 @@ Tone: ${agent.script?.tonePrompt || agent.tone}
 
 You follow this qualification script (in order, one short question per turn):
 ${(agent.script?.questions || []).map((q, i) => `${i + 1}. (${q.key}) ${q.ask}`).join('\n')}
+
+Your last turn left step=${lastStep} (0-based index into the list above). Re-read the lead's latest
+message: if it plausibly answers that question, advance step and ask the NEXT one — never repeat a
+question the lead already answered.
 
 Rules:
 - Reply with ONE short message at a time (max 25 words, often 5-12). Casual, lowercase friendly, sound like a real coach typing on phone, NOT an AI. No long paragraphs.
@@ -267,6 +271,7 @@ Return JSON matching the required schema:
           id: newId, agentId,
           ownerUid: agent.ownerUid || null,
           messages: [{ role: 'assistant', content: intro }],
+          state: EMPTY_CHAT_STATE,
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         })
@@ -291,9 +296,10 @@ Return JSON matching the required schema:
         return handleCORS(request, NextResponse.json({ error: 'conversation too long' }, { status: 400 }))
       }
 
+      const lastStep = Number.isInteger(conv.state?.step) ? conv.state.step : 0
       const userTurn = { role: 'user', content: truncate(message.trim(), 2000) }
       const turn = await chatJSON({
-        messages: [{ role: 'system', content: sys }, ...history, userTurn],
+        messages: [{ role: 'system', content: buildSys(lastStep) }, ...history, userTurn],
         temperature: 0.85,
         // A one-line DM needs no reasoning, and Gemini 2.5 bills thinking against
         // maxOutputTokens: left on, it grew with the history until it consumed the
@@ -316,6 +322,7 @@ Return JSON matching the required schema:
       // exactly what the lead saw.
       await convRef.update({
         messages: [...history, userTurn, { role: 'assistant', content: reply }],
+        state,
         updatedAt: FieldValue.serverTimestamp(),
       })
       return handleCORS(request, NextResponse.json({ conversationId, reply, state }))

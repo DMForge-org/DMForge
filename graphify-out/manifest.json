@@ -634,16 +634,6 @@
     "ast_hash": "a3ff67fea940c8c3ef6458af0da6ab6b",
     "semantic_hash": "a3ff67fea940c8c3ef6458af0da6ab6b"
   },
-  ".github/workflows/cron-reminders.yml": {
-    "mtime": 1783321970.1161466,
-    "ast_hash": "757d6b839abfb9d8c22d3e1b3a321b6c",
-    "semantic_hash": "757d6b839abfb9d8c22d3e1b3a321b6c"
-  },
-  ".github/workflows/deploy.yml": {
-    "mtime": 1783382089.332723,
-    "ast_hash": "4dd07d45e25823b50bb05d4758c8d88b",
-    "semantic_hash": "4dd07d45e25823b50bb05d4758c8d88b"
-  },
   ".github/workflows/e2e.yml": {
     "mtime": 1782942467.9906034,
     "ast_hash": "abf12aad99339ebd3f8f1fd271bffdc3",
