@@ -1,4 +1,20 @@
 {
+  "auth": {
+    "authorizedDomains": [
+      "localhost",
+      "dmforge-1df2e.firebaseapp.com",
+      "dmforge-1df2e.web.app",
+      "dmforge.org",
+      "www.dmforge.org"
+    ],
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "DMForge",
+        "supportEmail": "support@dmforge.org"
+      }
+    }
+  },
   "functions": [
     {
       "source": "functions",
