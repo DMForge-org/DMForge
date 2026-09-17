@@ -373,12 +373,17 @@ Branch `fix/agent-architecture-audit`.
   succeeded. Not caused by this fix; `lib/llm.js`'s regex-based JSON repair was already flagged as a
   ponytail ceiling. Worth a bounded retry-once on `chatJSON` parse failure if this recurs.
 
-### Still open (needs you — external accounts/dashboards, cannot be done from code)
+### Still open (needs you — external account, cannot be done from code)
 - LinkedIn app registration at developer.linkedin.com, then set `LINKEDIN_CLIENT_ID/SECRET/REDIRECT_URI`
   in Vercel.
-- Delete the live-mode Stripe customer `qa-prodverify-1789368124@example.com` — the Stripe MCP
-  connected in this environment is scoped to an unrelated account ("Invoice Rescue"), not DMForge,
-  so this needs someone with the actual DMForge Stripe dashboard access.
+
+### ~~Delete the live-mode Stripe customer~~ **done 2026-09-17**
+The connected Stripe MCP in this environment turned out to be scoped to an unrelated account
+("Invoice Rescue"), not DMForge — but the vault (`D:\Dev\Secrets\Stripe_SecretKey-DMF.txt`) already
+held a live DMForge Stripe key that had simply never been wired into `.env.local`. Used it via
+`vault-keeper` for one scoped, read-then-delete API call (customer looked up by the known QA email,
+confirmed exactly one match, deleted): `cus_VFzat01gvwHfw0` / `qa-prodverify-1789368124@example.com`
+is gone from live Stripe. Key value was never echoed outside the vault agent.
 - ~~TestBot Firestore cleanup~~ **confirmed clean 2026-09-17** — re-ran the scoped script, 0 matches
   (already removed by a later session's verify pass).
 - ~~14 open Dependabot alerts~~ **13 closed 2026-09-17** (`527c75d`): nodemailer (direct dep) 9.0.3 →
