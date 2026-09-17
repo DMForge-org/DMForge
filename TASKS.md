@@ -395,3 +395,27 @@ is gone from live Stripe. Key value was never echoed outside the vault agent.
   (`D:\Dev\Secrets\dmforge-cron-secret.txt`, `GHL-Webhook-secret.txt`) 2026-09-17; still need a human
   to paste them into Vercel → DMForge → Settings → Environment Variables → Production (no available
   Vercel MCP tool can write env vars).
+
+---
+
+## Session log (2026-09-17) — GitHub org setup research + legal-compliance fixes
+
+### Context
+Investigating "set up the DMForge org on GitHub" surfaced that `DMForge-org/DMForge-website` and this repo (`Mcgyver-ai/DMForge`) are the same codebase pushed to two GitHub locations, diverged after a shared commit (`1edad60`...`0c9f8c7`). This repo (`main`) is the actively-developed copy; `DMForge-website` is a stale, frozen mirror with a broken deploy gate and a default branch pointed at a leftover Claude working branch. Recommendation: you transfer this repo into `DMForge-org` yourself (Settings → Transfer ownership — no API tool exists for this), then archive `DMForge-website` rather than patching its bugs. Full detail in the plan this session was scoped from.
+
+### Shipped (this session, on `claude/dmforge-github-legal-setup-c2fo44`)
+- **False-advertising fix**: homepage/README/GitHub repo description claimed Instagram/WhatsApp/Messenger DM automation that was never built (`PROSPECT_CHANNELS` only supports linkedin/email/sms/manual — self-documented gap already flagged once in `app/api/[[...path]]/route.js`'s support-bot prompt, just not propagated to customer-facing copy until now).
+- **Cookie-consent gate**: `components/analytics-provider.jsx` was calling `initAnalytics()` unconditionally on every page load — PostHog was live with zero consent, despite `lib/analytics.js` carrying a `TODO(consent)` comment. Added `components/cookie-consent.jsx` + `getConsent()`/`setConsent()` in `lib/analytics.js`; analytics now only initializes after explicit accept.
+- **Email outreach unsubscribe**: `/api/outreach/send` had no unsubscribe mechanism. Added a signed-token unsubscribe link in every outreach email footer, a new public `GET /api/outreach/unsubscribe` endpoint, and a per-user `suppressed` Firestore subcollection checked before every send.
+- **SMS opt-out**: reminder template now includes "Reply STOP to opt out"; reminders cron checks a new `smsSuppressed` subcollection before sending; new `POST /api/webhooks/twilio?uid=` inbound webhook (Twilio signature verified by hand, matching `lib/sms.js`'s existing fetch-not-SDK approach) handles STOP/START/HELP. **Needs a manual step per connected Twilio number**: set that number's "A Message Comes In" webhook to `https://www.dmforge.org/api/webhooks/twilio?uid=<that user's uid>` in the Twilio console — can't be done from code.
+- **Repo hygiene**: `LICENSE` (proprietary — repo stays public per your call), `SECURITY.md`, `CODEOWNERS`, `.github/ISSUE_TEMPLATE/*`, `.github/PULL_REQUEST_TEMPLATE.md`, `package.json` `repository`/`homepage`/`license` fields.
+- **`LEGAL-COMPLIANCE.md`** — new file: UK-baseline + US-facing + EU AI Act research, sourced and dated, explicitly not-legal-advice. Flags (not auto-fixed) two business-sensitive calls: the EU AI Act Art. 50 disclosure tension against the script-generation prompt's "sound human, never robotic" instruction, and the LinkedIn User Agreement automation risk on the live LinkedIn channel.
+
+### Still open (follow-ups, not done this session)
+- Broader content audit: `lib/blog.js`, `lib/competitors.js`, `app/vs/[slug]/page.js`, `app/r/[id]/page.js`, `app/blog/page.js` still reference Instagram/WhatsApp/Messenger in lower-visibility marketing content — same false-advertising issue, larger surface, deliberately out of scope for this pass.
+- LinkedIn ToS decision (accept risk vs. gate the feature) — yours to make, see `LEGAL-COMPLIANCE.md`.
+- EU AI Act disclosure-line decision — yours to make, see `LEGAL-COMPLIANCE.md`.
+- Trading-disclosure gap: `app/legal/terms`/`privacy` say "a UK-based sole trader" without naming you — Ecommerce Regs 2002 wants the actual legal name + geographic address. Not fixed — needs your actual details, not fabricated ones.
+- Stripe's restricted-business terms as applied to automated-outreach SaaS — needs a direct read of `stripe.com/legal/restricted-businesses`, not just secondary sources.
+- After you transfer this repo to `DMForge-org`: archive `DMForge-website` rather than maintaining it as a second copy.
+- GitHub repo "About" description on `Mcgyver-ai/DMForge` still reads "Replies to your Instagram DMs, qualifies your leads, books your sales calls." — no repo-settings API tool available in this session to change it; takes 10 seconds by hand (pencil icon next to "About" on the repo page).
