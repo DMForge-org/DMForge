@@ -301,8 +301,8 @@ Branch `fix/agent-architecture-audit`.
   reinstall corepack and `corepack enable`.
 - Delete the live-mode Stripe customer `qa-prodverify-1789368124@example.com` left by the
   2026-09-14 checkout check (no charge; no Stripe key locally).
-- Simulator quality: the agent re-asked about timing after the lead had already given one, and
-  `state.step` stayed at 1.
+- ~~Simulator quality: the agent re-asked about timing after the lead had already given one, and
+  `state.step` stayed at 1.~~ **Fixed 2026-09-17**, see below.
 
 ---
 
@@ -345,3 +345,48 @@ Branch `fix/agent-architecture-audit`.
   convention of cleaning up QA-created records. The script is at
   `D:\Dev\System\Temp\claude\D--Dev-Workspaces-Active-DMForge\eb642a51-df26-43fa-a257-e2a521b089c5\scratchpad\cleanup-testbot.mjs`
   if you want to run it, or delete the doc manually from the Firebase console.
+
+---
+
+## Session log (2026-09-17) — conversation-state fix + working-tree cleanup
+
+### Shipped (`de66fe6`, `477cdab`)
+- Working tree had drifted from a clean checkout: an uncommitted `CLAUDE.md` edit was silently
+  re-reverting `dd00bee`'s test:e2e fix back to the wrong claim (verified against
+  `playwright.config.js:7` — it defaults to `localhost:3000`) — discarded, not committed. A
+  `graphify update` re-run had also produced a degraded/empty graph (1 node vs. committed 6) —
+  discarded and left to the repo's own background rebuild hook, which produced a healthy diff
+  (two long-deleted workflow files dropped from `manifest.json`). Legit drift (`AGENTS.md`'s
+  `next dev`-regenerated block, `firebase.json`'s console-managed Auth config, new
+  `.claude/launch.json`) committed as-is. Stray untracked files (`MEMORY.md` at repo root,
+  a `claude doctor` settings backup) removed — neither belonged in the repo.
+- **Root-caused the simulator re-ask bug**: `/api/agent/chat`'s `state` (step/qualified/booked/tags)
+  was computed and returned every turn but never persisted, so with `thinking_budget: 0` the model
+  had nothing anchoring which script question it was on beyond re-reading raw chat history —
+  it would drift and repeat. Now `state` is stored on the `conversations` doc and the last `step`
+  is fed back into the system prompt each turn. Verified live against Gemini + Firestore: a fresh
+  5-question script advanced step every turn with zero repeats, through to `booked: true` with the
+  correct slot. QA agent/conversation deleted after.
+- **Found, not fixed (separate, pre-existing)**: mid-verification, one turn hit the known
+  `repairLLMJson` ceiling — Gemini degenerated into a repeated-whitespace loop and hit `max_tokens`
+  before closing the JSON, throwing `LLM returned invalid JSON`. Retrying the identical request
+  succeeded. Not caused by this fix; `lib/llm.js`'s regex-based JSON repair was already flagged as a
+  ponytail ceiling. Worth a bounded retry-once on `chatJSON` parse failure if this recurs.
+
+### Still open (needs you — external accounts/dashboards, cannot be done from code)
+- LinkedIn app registration at developer.linkedin.com, then set `LINKEDIN_CLIENT_ID/SECRET/REDIRECT_URI`
+  in Vercel.
+- Delete the live-mode Stripe customer `qa-prodverify-1789368124@example.com` — the Stripe MCP
+  connected in this environment is scoped to an unrelated account ("Invoice Rescue"), not DMForge,
+  so this needs someone with the actual DMForge Stripe dashboard access.
+- ~~TestBot Firestore cleanup~~ **confirmed clean 2026-09-17** — re-ran the scoped script, 0 matches
+  (already removed by a later session's verify pass).
+- ~~14 open Dependabot alerts~~ **13 closed 2026-09-17** (`527c75d`): nodemailer (direct dep) 9.0.3 →
+  9.1.1; browserslist, brace-expansion, fflate, dompurify, protobufjs, baseline-browser-mapping
+  bumped transitively via the temp-resolutions recipe. Build + nodemailer API smoke test +
+  result-state specs all green. **Still open:** uuid (<11.1.1, moderate) — only fix is
+  firebase-admin@14, blocked by [[dmforge-firebase-admin-13-pin]] (every API route 500s on v14).
+- `CRON_SECRET` / `GHL_WEBHOOK_SECRET` — new values generated and rotated into the vault
+  (`D:\Dev\Secrets\dmforge-cron-secret.txt`, `GHL-Webhook-secret.txt`) 2026-09-17; still need a human
+  to paste them into Vercel → DMForge → Settings → Environment Variables → Production (no available
+  Vercel MCP tool can write env vars).
