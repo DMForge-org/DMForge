@@ -1,6 +1,6 @@
 # DMForge
 
-AI DM appointment setter SaaS for online coaches. Build, live-test, and deploy AI agents that handle Instagram/WhatsApp/Messenger DMs, qualify leads, and book sales calls automatically.
+AI DM appointment setter SaaS for online coaches. Build, live-test, and deploy AI agents that handle LinkedIn and email outreach, qualify leads, and book sales calls automatically — with SMS appointment reminders.
 
 ## Tech Stack
 

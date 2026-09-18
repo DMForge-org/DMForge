@@ -72,7 +72,7 @@ export default async function ResultPage({ params }) {
 
         <div className="bg-[#161630] border border-[#2A2A55] rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b border-[#2A2A55] bg-[#1F1F42] text-sm font-semibold flex items-center justify-between">
-            <span>💬 Instagram DM transcript</span>
+            <span>💬 DM transcript</span>
             <span className="text-xs text-[#A0A0C8]">{r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}</span>
           </div>
           <div className="p-5 space-y-3">

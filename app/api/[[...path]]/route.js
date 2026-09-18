@@ -16,6 +16,7 @@ import { ghlValidate, ghlGetContact, ghlCreateContact, ghlCreateAppointment } fr
 import { onProspectBooked, normalizeStatus, normalizeChannel, PROSPECT_STATUSES, PROSPECT_CHANNELS } from '@/lib/prospects'
 import { deriveResultState } from '@/lib/resultState'
 import { findPlaceholders, scriptPlaceholders } from '@/lib/scriptText'
+import { getBaseUrl } from '@/lib/baseUrl'
 
 // Cross-origin callers must be on the allow-list; same-origin requests never
 // need CORS headers. Override via CORS_ORIGINS (comma-separated) — the old
@@ -229,7 +230,7 @@ Every intro, ask, bookingMessage and disqualifyResponse is sent to real leads EX
         return handleCORS(request, NextResponse.json({ error: 'forbidden' }, { status: 403 }))
       }
 
-      const buildSys = (lastStep) => `You are role-playing as ${agent.agentName}, an online ${agent.niche} coach, talking to a NEW LEAD over Instagram DM.
+      const buildSys = (lastStep) => `You are role-playing as ${agent.agentName}, an online ${agent.niche} coach, talking to a NEW LEAD in a DM conversation.
 Your offer: ${agent.offer}
 Ideal audience: ${agent.audience || 'general'}
 Must qualify on: ${agent.qualification}
@@ -597,6 +598,12 @@ Rules:
       }
       const creds = JSON.parse(decrypt(channelSnap.data().encryptedCreds))
 
+      // CAN-SPAM/PECR: never send to an address that opted out via the
+      // unsubscribe link below, regardless of dedup state.
+      const suppressKey = crypto.createHash('sha256').update(to.trim().toLowerCase()).digest('hex')
+      const suppressed = await db.collection('users').doc(decoded.uid).collection('suppressed').doc(suppressKey).get()
+      if (suppressed.exists) return handleCORS(request, NextResponse.json({ sent: false, skipped: 'suppressed' }))
+
       // ponytail: dedup keyed by content hash under users/{uid}/sentMessages — the
       // real spec wants leads/{uid}/prospects/{prospectId}/sentMessages, but no
       // lead/prospect model exists in this codebase yet. Move it there once it does.
@@ -605,13 +612,38 @@ Rules:
       const dupe = await sentRef.where('hash', '==', hash).limit(1).get()
       if (!dupe.empty) return handleCORS(request, NextResponse.json({ sent: false, skipped: 'duplicate' }))
 
+      const unsubToken = encodeURIComponent(encrypt(JSON.stringify({ uid: decoded.uid, to })))
+      const unsubUrl = `${getBaseUrl()}/api/outreach/unsubscribe?t=${unsubToken}`
+      const fullText = `${text}\n\n--\nDon't want these emails? Unsubscribe: ${unsubUrl}`
+
       try {
-        await sendEmail(creds, { to, subject: truncate(subject, 200), text: truncate(text, 5000) })
+        await sendEmail(creds, { to, subject: truncate(subject, 200), text: truncate(fullText, 5200) })
       } catch (err) {
         return handleCORS(request, NextResponse.json({ sent: false, error: err.message }, { status: 502 }))
       }
       await sentRef.add({ hash, to, subject: truncate(subject, 200), sentAt: FieldValue.serverTimestamp() })
       return handleCORS(request, NextResponse.json({ sent: true }))
+    }
+
+    // GET /api/outreach/unsubscribe — public link sent in every outreach email
+    // footer above; no auth (the recipient is not a DMForge account holder).
+    if (route === '/outreach/unsubscribe' && method === 'GET') {
+      const token = new URL(request.url).searchParams.get('t')
+      let payload
+      try {
+        payload = JSON.parse(decrypt(decodeURIComponent(token || '')))
+      } catch {
+        return handleCORS(request, new NextResponse('Invalid or expired unsubscribe link.', { status: 400 }))
+      }
+      const { uid, to } = payload || {}
+      if (!uid || !to) return handleCORS(request, new NextResponse('Invalid or expired unsubscribe link.', { status: 400 }))
+      const suppressKey = crypto.createHash('sha256').update(to.trim().toLowerCase()).digest('hex')
+      await db.collection('users').doc(uid).collection('suppressed').doc(suppressKey)
+        .set({ email: to, suppressedAt: FieldValue.serverTimestamp() })
+      return handleCORS(request, new NextResponse('You have been unsubscribed and will not receive further outreach emails from this sender.', {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      }))
     }
 
     // GET /api/auth/linkedin — returns the consent URL (auth required; browser
@@ -913,6 +945,8 @@ Rules:
         })
         if (!claimed) continue
         try {
+          const suppressed = await db.collection('users').doc(r.uid).collection('smsSuppressed').doc(r.to).get()
+          if (suppressed.exists) { await doc.ref.update({ status: 'skipped', error: 'recipient opted out' }); continue }
           const chSnap = await db.collection('users').doc(r.uid).collection('channels').doc('sms').get()
           if (!chSnap.exists || !chSnap.data().connected) throw new Error('sms channel not connected')
           const creds = JSON.parse(decrypt(chSnap.data().encryptedCreds))
@@ -924,6 +958,51 @@ Rules:
         }
       }
       return handleCORS(request, NextResponse.json({ processed: due.size, sent, failed }))
+    }
+
+    // POST /api/webhooks/twilio?uid=<uid> — inbound SMS webhook, configured per
+    // user on their Twilio number ("A Message Comes In"). Handles STOP/HELP
+    // keywords per CTIA guidelines. Signature validated per Twilio's documented
+    // scheme (https://www.twilio.com/docs/usage/webhooks/webhooks-security) —
+    // hand-rolled deliberately, matching lib/sms.js's fetch-not-SDK approach.
+    if (route === '/webhooks/twilio' && method === 'POST') {
+      const uid = new URL(request.url).searchParams.get('uid')
+      const chSnap = uid ? await db.collection('users').doc(uid).collection('channels').doc('sms').get() : null
+      if (!uid || !chSnap?.exists) return new NextResponse('', { status: 404 })
+      const { authToken } = JSON.parse(decrypt(chSnap.data().encryptedCreds))
+
+      const form = await request.formData()
+      const params = {}
+      for (const [k, v] of form.entries()) params[k] = v
+
+      const signature = request.headers.get('x-twilio-signature') || ''
+      const expectedUrl = `${getBaseUrl()}/api/webhooks/twilio?uid=${uid}`
+      const signedString = Object.keys(params).sort().reduce((s, k) => s + k + params[k], expectedUrl)
+      const expected = crypto.createHmac('sha1', authToken).update(signedString, 'utf8').digest('base64')
+      const sigBuf = Buffer.from(signature)
+      const expBuf = Buffer.from(expected)
+      if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+        return new NextResponse('', { status: 403 })
+      }
+
+      const body = String(params.Body || '').trim().toUpperCase()
+      const from = String(params.From || '')
+      let reply = ''
+      if (['STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT'].includes(body) && from) {
+        await db.collection('users').doc(uid).collection('smsSuppressed').doc(from)
+          .set({ suppressedAt: FieldValue.serverTimestamp() })
+        reply = 'You have been unsubscribed and will not receive further messages. Reply START to resubscribe.'
+      } else if (body === 'START' && from) {
+        await db.collection('users').doc(uid).collection('smsSuppressed').doc(from).delete()
+        reply = 'You have been resubscribed to messages.'
+      } else if (body === 'HELP') {
+        reply = 'For help, contact the number that texted you. Reply STOP to opt out.'
+      }
+
+      const twiml = reply
+        ? `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${reply.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</Message></Response>`
+        : `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`
+      return new NextResponse(twiml, { status: 200, headers: { 'Content-Type': 'text/xml' } })
     }
 
     // POST /api/integrations/ghl/connect — store encrypted API key + locationId

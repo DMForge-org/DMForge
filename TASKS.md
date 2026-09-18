@@ -395,3 +395,42 @@ is gone from live Stripe. Key value was never echoed outside the vault agent.
   (`D:\Dev\Secrets\dmforge-cron-secret.txt`, `GHL-Webhook-secret.txt`) 2026-09-17; still need a human
   to paste them into Vercel → DMForge → Settings → Environment Variables → Production (no available
   Vercel MCP tool can write env vars).
+
+---
+
+## Session log (2026-09-17) — GitHub org setup research + legal-compliance fixes
+
+### Context
+Investigating "set up the DMForge org on GitHub" surfaced that `DMForge-org/DMForge-website` and this repo (`Mcgyver-ai/DMForge`) are the same codebase pushed to two GitHub locations, diverged after a shared commit (`1edad60`...`0c9f8c7`). This repo (`main`) is the actively-developed copy; `DMForge-website` is a stale, frozen mirror with a broken deploy gate and a default branch pointed at a leftover Claude working branch. Recommendation: you transfer this repo into `DMForge-org` yourself (Settings → Transfer ownership — no API tool exists for this), then archive `DMForge-website` rather than patching its bugs. Full detail in the plan this session was scoped from.
+
+### Shipped (this session, on `claude/dmforge-github-legal-setup-c2fo44`)
+- **False-advertising fix**: homepage/README/GitHub repo description claimed Instagram/WhatsApp/Messenger DM automation that was never built (`PROSPECT_CHANNELS` only supports linkedin/email/sms/manual — self-documented gap already flagged once in `app/api/[[...path]]/route.js`'s support-bot prompt, just not propagated to customer-facing copy until now).
+- **Cookie-consent gate**: `components/analytics-provider.jsx` was calling `initAnalytics()` unconditionally on every page load — PostHog was live with zero consent, despite `lib/analytics.js` carrying a `TODO(consent)` comment. Added `components/cookie-consent.jsx` + `getConsent()`/`setConsent()` in `lib/analytics.js`; analytics now only initializes after explicit accept.
+- **Email outreach unsubscribe**: `/api/outreach/send` had no unsubscribe mechanism. Added a signed-token unsubscribe link in every outreach email footer, a new public `GET /api/outreach/unsubscribe` endpoint, and a per-user `suppressed` Firestore subcollection checked before every send.
+- **SMS opt-out**: reminder template now includes "Reply STOP to opt out"; reminders cron checks a new `smsSuppressed` subcollection before sending; new `POST /api/webhooks/twilio?uid=` inbound webhook (Twilio signature verified by hand, matching `lib/sms.js`'s existing fetch-not-SDK approach) handles STOP/START/HELP. **Needs a manual step per connected Twilio number**: set that number's "A Message Comes In" webhook to `https://www.dmforge.org/api/webhooks/twilio?uid=<that user's uid>` in the Twilio console — can't be done from code.
+- **Repo hygiene**: `LICENSE` (proprietary — repo stays public per your call), `SECURITY.md`, `CODEOWNERS`, `.github/ISSUE_TEMPLATE/*`, `.github/PULL_REQUEST_TEMPLATE.md`, `package.json` `repository`/`homepage`/`license` fields.
+- **`LEGAL-COMPLIANCE.md`** — new file: UK-baseline + US-facing + EU AI Act research, sourced and dated, explicitly not-legal-advice. Flags (not auto-fixed) two business-sensitive calls: the EU AI Act Art. 50 disclosure tension against the script-generation prompt's "sound human, never robotic" instruction, and the LinkedIn User Agreement automation risk on the live LinkedIn channel.
+
+### Still open (follow-ups, not done this session)
+- LinkedIn ToS decision (accept risk vs. gate the feature) — yours to make, see `LEGAL-COMPLIANCE.md`.
+- EU AI Act disclosure-line decision — yours to make, see `LEGAL-COMPLIANCE.md`.
+- Trading-disclosure gap: `app/legal/terms`/`privacy` say "a UK-based sole trader" without naming you — Ecommerce Regs 2002 wants the actual legal name + geographic address. Not fixed — needs your actual details, not fabricated ones.
+
+### ~~Broader content audit~~, ~~repo transfer/archive~~, ~~GitHub description~~, ~~Stripe terms~~ — **done 2026-09-18**
+You transferred `Mcgyver-ai/DMForge` → `DMForge-org` and deleted `DMForge-website` outright (stronger than the archive recommendation — fine call). GitHub description has been updated (was briefly "Replies to your Instagram DMs." after a first edit — still inaccurate; flagged and corrected again).
+
+Content audit came back bigger than the round-1 estimate: `lib/competitors.js`, `app/vs/[slug]/page.js`, and `app/page.js`'s comparison table were checked and are clean (every Instagram/WhatsApp mention there describes a *competitor's* channels). The real problem was 6 of 12 seeded posts in `lib/blog.js` giving literal false step-by-step instructions. Per your call (**rewrite around real channels**, not delete):
+- `ai-dm-appointment-setter-guide-2025` — kept slug, rewrote the tldr/steps/mistakes around LinkedIn+email.
+- `instagram-dm-automation-without-getting-banned` → reslugged `linkedin-outreach-automation-without-getting-restricted` — rewritten honestly around LinkedIn's real automation-restriction risk (was previously a false-safety-promise post about Instagram bans; now doesn't repeat that pattern for LinkedIn either).
+- `comment-to-dm-automation-how-it-works` → reslugged `how-dmforge-qualifies-replies-automatically` — reframed around the product's real mechanism (reply-triggered qualification), since comment-to-DM has no LinkedIn/email equivalent to rewrite it as.
+- `whatsapp-vs-instagram-dm-coaches` → reslugged `linkedin-vs-email-dm-coaches`.
+- `book-sales-calls-inside-instagram-dms` → reslugged `book-sales-calls-inside-linkedin-dms`.
+- `calendly-instagram-dm-stack` → reslugged `calendly-linkedin-dm-stack`.
+- Also fixed two false instructions the round-1 scoping report missed on its own re-read: `dm-to-closed-deal-funnel` said "connect Instagram" and cited "WhatsApp reminders" — corrected to LinkedIn/email and SMS respectively (SMS reminder timing corrected to the actual 24h/1h the cron uses, not the post's invented "24h/2h"). `manychat-alternatives-that-qualify-leads`'s migration checklist told readers to "connect DMForge to Instagram via OAuth" — corrected to be honest that switching is a channel change (LinkedIn/email), not a like-for-like swap. All internal `/blog/<slug>` cross-links updated to match; grepped the whole repo for the 5 old slugs afterward, zero remaining outside `.next/` build output.
+- **Deliberately left alone, per your call**: `/best/instagram-dm-bot`, `/best/whatsapp-ai-agent`, and their `app/sitemap.js` entries. No literal false sentence renders on those pages (no `channels` field shown on `/best/*` cards) — the exposure is implied-by-ranking, and you chose to keep the traffic over closing that gap.
+- Two functional bugs found along the way, fixed regardless of the content-strategy call: `app/r/[id]/page.js` hardcoded "Instagram DM transcript" on every shared result (now a channel-neutral "DM transcript" label — the underlying `results` docs don't track channel per-record, so neutral is the honest fix); `app/inbox/page.js`'s Add Lead form defaulted new leads to `'instagram'`, which isn't in `PROSPECT_CHANNELS` (defaulted to `'manual'` instead, removed from the dropdown).
+
+Stripe's restricted-business terms: fetched `stripe.com/legal/restricted-businesses` directly. No category for automated-messaging/marketing SaaS/AI agents; the only maybe-relevant entry is a bare, undefined "Telemarketing" line, which conventionally means voice calls — not what DMForge does. Reasonably resolved, written up in `LEGAL-COMPLIANCE.md`.
+
+### New from the transfer: CI's "Secret scan" job is broken org-wide
+Pushing the round-2 commits (once GitHub App access was fixed) surfaced this on PR #10: `gitleaks-action` refuses to run at all for an organization-owned repo without a `GITLEAKS_LICENSE` secret — `[DMForge-org] is an organization. License key is required.` This is unrelated to any diff; it'll fail identically on every push, including to `main`, until fixed. It's **free for orgs, not a purchase** — sign up at https://gitleaks.io (name/email/company), then add the key as a GitHub secret named `GITLEAKS_LICENSE` on the `DMForge-org` org or this repo. Account sign-up + secret management, so it needs you — flagged as a PR comment on #10 rather than silently disabling the check or routing around it in `.github/workflows/ci.yml`.

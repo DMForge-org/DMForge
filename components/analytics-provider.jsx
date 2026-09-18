@@ -1,8 +1,10 @@
 'use client'
 import { useEffect } from 'react'
-import { initAnalytics } from '@/lib/analytics'
+import { getConsent, initAnalytics } from '@/lib/analytics'
 
 export function AnalyticsProvider() {
-  useEffect(() => { initAnalytics() }, [])
+  useEffect(() => {
+    if (getConsent() === 'granted') initAnalytics()
+  }, [])
   return null
 }
