@@ -16,11 +16,17 @@ Live outbound channels today: **LinkedIn DMs** (`lib/linkedin.js`) and **email**
 - No opt-out handling on SMS. Added "Reply STOP to opt out" to the reminder template, a suppression check before send, and a signature-verified inbound Twilio webhook handling STOP/START/HELP (CTIA Messaging Principles; TCPA 47 U.S.C. §227).
 - Repo hygiene: added `LICENSE` (proprietary — you chose to keep the repo public), `SECURITY.md`, `CODEOWNERS`, issue/PR templates.
 
+## Fixed in round 2 (content-audit follow-up)
+
+- 6 of 12 seeded blog posts in `lib/blog.js` gave literal false step-by-step instructions ("Connect Instagram via OAuth," etc.) for a channel that doesn't exist — rewritten around LinkedIn/email, with the two most Instagram-specific ones reslugged to match their new content (`linkedin-outreach-automation-without-getting-restricted`, `how-dmforge-qualifies-replies-automatically`). One of the rewrites (the ban-avoidance guide) is now honest about LinkedIn's own real automation risk rather than promising false safety.
+- Two functional bugs found in the same pass, unrelated to content: `app/r/[id]/page.js` hardcoded "Instagram DM transcript" on every shared result regardless of actual channel (fixed to a channel-neutral label — the underlying `results` data doesn't track per-record channel, so a neutral label is the honest fix, not a fabricated dynamic one); `app/inbox/page.js`'s Add Lead form defaulted new leads to `'instagram'`, a channel not in `PROSPECT_CHANNELS` (fixed default to `'manual'`, removed from the dropdown).
+- Deliberately **not** changed, per your call: `/best/instagram-dm-bot`, `/best/whatsapp-ai-agent`, and their `app/sitemap.js` entries. The rendered page copy doesn't literally claim a channel (no `channels` field renders on `/best/*` cards) — the exposure there is implied-by-search-ranking, not a false sentence, and you chose to accept that rather than pull traffic-earning pages.
+
 ## UK baseline
 
 - **UK GDPR / DPA 2018**: `app/legal/privacy` already commits to fulfilling access/erasure/portability requests manually within 30 days — that's a compliant floor. Worth noting: prospect PII (name/phone/email) is stored in plaintext in Firestore (`lib/prospects.js`); only channel *credentials* are encrypted (`lib/encryption.js`). Firestore encrypts at rest at the infrastructure level, so this isn't automatically non-compliant, but Article 32's "appropriate technical measures" is a risk-based judgment call worth revisiting as lead volume grows.
 - **PECR**: cookie consent gap fixed above. The same regulation (reg. 22) governs unsolicited email/SMS marketing to individuals — the "soft opt-in" exception (existing customer relationship, similar products, clear opt-out offered) is the most plausible basis for the cold-outreach email/LinkedIn flows, but that exception has conditions worth confirming apply to how coaches actually use DMForge (are recipients existing customers of *the coach*, or cold prospects? — the latter needs explicit consent, not soft opt-in).
-- **CPUT Regs 2008**: covers the false-advertising angle above (fixed) — also worth a pass over `lib/blog.js`, `lib/competitors.js`, `app/vs/[slug]/page.js`, `app/r/[id]/page.js`, `app/blog/page.js`, which still reference Instagram/WhatsApp/Messenger in lower-visibility content (see follow-ups in `TASKS.md`).
+- **CPUT Regs 2008**: covers the false-advertising angle above. `lib/competitors.js`, `app/vs/[slug]/page.js`, and `app/page.js`'s comparison table were checked and are clean — every Instagram/WhatsApp/Messenger mention there correctly describes a *competitor's* channels, not DMForge's. `lib/blog.js` and `app/r/[id]/page.js` had real issues, now fixed (see round 2 above). `/best/[slug]` SEO pages were a deliberate keep (see round 2).
 - **Trading disclosure**: the Ecommerce Regulations 2002 require a site to name the actual trader (legal name) and a geographic address, not just "a UK-based sole trader." The current legal pages don't name you. I didn't add a name because I don't have it and won't fabricate one — see open questions below.
 
 ## US-facing gaps (channels/vendors are US-governed)
@@ -45,12 +51,15 @@ This needs your call, ideally with a solicitor's read on how strictly "before or
 - **LinkedIn User Agreement**: prohibits automation tools for messaging. `lib/linkedin.js` sends real automated DMs through an unofficial OAuth integration — this is a live feature, and the ToS risk (account restriction, not a fine) is a business decision about how much of the product depends on it, not something with a code fix.
 - **Meta / Instagram Messaging API**: not relevant today since Instagram isn't built. If it's ever built, Meta requires the official Instagram Messaging API, Business Verification, and App Review (2-4+ weeks), plus a 24-hour messaging window and ~200 msg/hour rate limit — automating Instagram DMs outside that official path is itself a ToS violation, separate from the false-advertising issue already fixed.
 
+## Stripe restricted-business terms — resolved
+
+Fetched `stripe.com/legal/restricted-businesses` directly (round 1 only had marketing-sourced secondary pages). Confirmed: no category for automated messaging/DM tools, marketing/lead-gen SaaS, or AI agents. The only plausibly-relevant entry is a bare, undefined "Telemarketing" line under Prohibited Businesses, with no elaboration on the page itself. Telemarketing conventionally means unsolicited outbound *voice* calls, which isn't what DMForge does (text-based LinkedIn/email outreach, SMS reminders) — so this likely doesn't apply. "Likely" is as far as primary-source research alone can take it; Stripe's own page doesn't define the term, so if you want certainty, ask Stripe support directly rather than treat this as fully closed.
+
 ## Open questions for your accountant/solicitor (not answered here)
 
 1. **Sole-trader liability**: you're personally liable while processing client leads' PII and running payment collection through Stripe. Worth a second look given the scale, not just accepted by default because it's how things started.
-2. **Stripe's restricted-business terms** as applied to automated-outreach SaaS specifically — my research turned up marketing-sourced pages, not a clear read of `stripe.com/legal/restricted-businesses` itself. Worth checking directly before this becomes a real payments-processing risk.
-3. **Your actual trading name and address** for the Ecommerce Regs trading-disclosure requirement above — I don't have it and didn't invent one.
-4. **The EU AI Act disclosure tension** above.
+2. **Your actual trading name and address** for the Ecommerce Regs trading-disclosure requirement above — I don't have it and didn't invent one.
+3. **The EU AI Act disclosure tension** above.
 
 ## Sources consulted this session
 
@@ -61,3 +70,4 @@ This needs your call, ideally with a solicitor's read on how strictly "before or
 - [Twilio: Webhooks security](https://www.twilio.com/docs/usage/webhooks/webhooks-security)
 - [Instagram Messaging API Approval Guide (2026)](https://singhamandeep.com/instagram-messaging-api-approval-getting-instagram_business_manage_messages-2026/)
 - Meta Instagram DM automation rate limits/24-hour window: aggregated from multiple 2026 developer guides (Spur, Blotato, keyapi.ai) — cross-check against `developers.facebook.com/documentation/instagram-platform` directly before building.
+- [Stripe: Prohibited and Restricted Businesses](https://stripe.com/legal/restricted-businesses) — fetched directly, round 2.
