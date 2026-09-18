@@ -4,7 +4,7 @@ import { Logo } from '@/components/logo'
 
 export const metadata = {
   title: 'DMForge Blog — AI DM appointment setting playbooks for coaches',
-  description: 'Real, dated, no-fluff guides on Instagram DM automation, AI qualification, in-chat booking and high-ticket coach funnels. Written by the team behind DMForge.',
+  description: 'Real, dated, no-fluff guides on AI DM outreach, qualification, in-chat booking and high-ticket coach funnels. Written by the team behind DMForge.',
   alternates: { canonical: '/blog' },
   openGraph: { title: 'DMForge Blog', description: 'AI DM appointment setting playbooks for coaches.', type: 'website' },
 }

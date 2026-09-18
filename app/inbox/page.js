@@ -41,7 +41,7 @@ export default function InboxPage() {
   const [busy, setBusy] = useState(false)
   const [draft, setDraft] = useState('')
   const [showNew, setShowNew] = useState(false)
-  const [newLead, setNewLead] = useState({ name: '', handle: '', channel: 'instagram', email: '', phone: '' })
+  const [newLead, setNewLead] = useState({ name: '', handle: '', channel: 'manual', email: '', phone: '' })
   const [inbound, setInbound] = useState(null)
 
   const load = useCallback(async () => {
@@ -107,7 +107,7 @@ export default function InboxPage() {
     try {
       const res = await authFetch('/api/prospects', { method: 'POST', body: JSON.stringify(newLead) }, getToken)
       const d = await res.json()
-      if (d.id) { toast.success('Lead added'); setShowNew(false); setNewLead({ name: '', handle: '', channel: 'instagram', email: '', phone: '' }); load() }
+      if (d.id) { toast.success('Lead added'); setShowNew(false); setNewLead({ name: '', handle: '', channel: 'manual', email: '', phone: '' }); load() }
       else toast.error(d.error || 'Failed to add')
     } catch {
       toast.error('Failed to add')
@@ -158,7 +158,7 @@ export default function InboxPage() {
           <div className="grid grid-cols-2 gap-2">
             <Input aria-label="Name" placeholder="Name" value={newLead.name} onChange={(e) => setNewLead({ ...newLead, name: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />
             <select aria-label="Lead channel" value={newLead.channel} onChange={(e) => setNewLead({ ...newLead, channel: e.target.value })} className="bg-[#0F0F26] border border-[#2A2A55] rounded-md px-3 text-sm">
-              {['instagram', 'linkedin', 'email', 'sms', 'manual'].map((c) => <option key={c} value={c}>{c}</option>)}
+              {['linkedin', 'email', 'sms', 'manual'].map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             <Input aria-label="Handle" placeholder="@handle" value={newLead.handle} onChange={(e) => setNewLead({ ...newLead, handle: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />
             <Input aria-label="Phone" placeholder="Phone (for reminders)" value={newLead.phone} onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />
