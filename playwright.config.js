@@ -4,7 +4,7 @@ const { defineConfig, devices } = require('@playwright/test')
 // IMPORTANT: Defaults to localhost (safe for local/CI testing).
 // To test production: BASE_URL=https://www.dmforge.org yarn test:e2e
 // (requires explicit opt-in to avoid accidental production test runs)
-const baseURL = process.env.BASE_URL || 'http://localhost:3000'
+const baseURL = process.env.BASE_URL || 'http://127.0.0.1:3000'
 
 module.exports = defineConfig({
   testDir: './tests/e2e',
@@ -23,4 +23,10 @@ module.exports = defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
+  webServer: {
+    command: 'npx yarn@1.22.22 dev',
+    url: 'http://127.0.0.1:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+  },
 })

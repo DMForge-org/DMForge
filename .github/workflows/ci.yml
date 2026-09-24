@@ -66,7 +66,10 @@ jobs:
       # (none of them request the `page` fixture). The rest of tests/e2e needs
       # a live deployment and stays manual in e2e.yml. Add a spec here only if
       # it runs with neither BASE_URL nor secrets.
-      - name: Run unit specs
+      - name: Run unit and component specs (Vitest)
+        run: yarn test:run
+
+      - name: Run pure logic E2E specs
         run: yarn playwright test tests/e2e/result-state.spec.js tests/e2e/script-text.spec.js --reporter=list
 
   secret-scan:
