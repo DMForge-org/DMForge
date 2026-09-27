@@ -3,12 +3,18 @@ import { Logo } from '@/components/logo'
 import { TrackSubscriptionActive } from '@/components/track-subscription-active'
 import { getBaseUrl } from '@/lib/baseUrl'
 
+import { logError } from '@/lib/logger'
+
 async function fetchSession(id) {
   try {
     const res = await fetch(`${getBaseUrl()}/api/billing/session?session_id=${id}`, { cache: 'no-store' })
     if (!res.ok) return null
     return await res.json()
-  } catch { return null }
+  } catch (err) {
+    console.error('Failed to retrieve billing session:', err?.message)
+    logError('Failed to retrieve billing session', err)
+    return null
+  }
 }
 
 export const metadata = { title: 'Welcome to DMForge Pro — you\'re in', robots: { index: false } }

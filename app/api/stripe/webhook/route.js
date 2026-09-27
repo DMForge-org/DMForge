@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/nextjs'
 import { NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { getAdminDb, getAdminFieldValue } from '@/lib/firebaseAdmin'
+import { logError } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,8 +12,9 @@ export async function POST(request) {
   const stripe = getStripe()
   let event
   try {
-    if (process.env.STRIPE_WEBHOOK_SECRET) {
-      event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET)
+    const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET || '').replace(/^["']|["']$/g, '').trim()
+    if (webhookSecret) {
+      event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
     } else if (process.env.NODE_ENV !== 'production') {
       // Allow unsigned webhooks only in development (e.g. Stripe CLI forwarding)
       console.warn('STRIPE_WEBHOOK_SECRET not set — skipping signature verification (dev only)')
@@ -63,9 +65,24 @@ export async function POST(request) {
         if (docId) await db.collection('users').doc(docId).set({ status: 'canceled', plan: 'free', updatedAt: FV.serverTimestamp() }, { merge: true })
         break
       }
+      case 'invoice.paid':
+      case 'invoice.payment_failed': {
+        // Invoice-level events are the correct hook for surfacing renewal/dunning
+        // state (Stripe transitions subscription.status to past_due/unpaid on
+        // failed renewal, which this reuses the same sync path to record).
+        const invoice = event.data.object
+        if (invoice.subscription) {
+          const sub = await stripe.subscriptions.retrieve(invoice.subscription)
+          const email = sub.metadata?.email
+          const uid = sub.metadata?.uid
+          if (email) await syncSubscription(email, uid, sub)
+        }
+        break
+      }
     }
   } catch (e) {
     console.error('webhook handler', e)
+    logError('webhook handler error', e, { eventType: event.type })
     Sentry.captureException(e)
   }
 

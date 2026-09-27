@@ -132,6 +132,7 @@ export default function WebhooksSettings() {
                 <div className="text-xs text-[#A0A0C8] mt-0.5">{(w.events || []).join(', ')} · {w.active ? 'active' : 'paused'}</div>
               </div>
               <Button onClick={() => remove(w.id)} disabled={busy} variant="outline" aria-label={`Delete webhook ${w.url}`} className="bg-transparent border-[#2A2A55] shrink-0"><Trash2 className="w-4 h-4" /></Button>
+              <Button onClick={() => remove(w.id)} disabled={busy} variant="outline" aria-label={`Remove webhook: ${w.url}`} className="bg-transparent border-[#2A2A55] shrink-0"><Trash2 className="w-4 h-4" /></Button>
             </Card>
           ))}
         </div>

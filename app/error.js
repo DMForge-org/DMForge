@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import * as Sentry from '@sentry/nextjs'
 import { Button } from '@/components/ui/button'
 
 /**
@@ -11,7 +12,10 @@ import { Button } from '@/components/ui/button'
  * reaches it. Next.js renders this instead.
  */
 export default function Error({ error, reset }) {
-  useEffect(() => { console.error('Route error:', error) }, [error])
+  useEffect(() => {
+    console.error('Route error:', error)
+    Sentry.captureException(error)
+  }, [error])
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-5">

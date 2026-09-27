@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { logError } from '@/lib/logger'
 import { getAdminDb } from '@/lib/firebaseAdmin'
 import { getStripe } from '@/lib/stripe'
 import { GEMINI_BASE, MODEL as GEMINI_MODEL } from '@/lib/llm'
@@ -45,19 +46,24 @@ async function checkGemini() {
 // anonymous per-IP limiter as every other public route so it can't be used
 // to hammer Stripe/Gemini/Firestore for free.
 export async function GET(request) {
-  if (!(await checkRateLimit(request, null))) {
-    return NextResponse.json({ error: 'rate_limit_exceeded' }, { status: 429 })
+  try {
+    if (!(await checkRateLimit(request, null))) {
+      return NextResponse.json({ error: 'rate_limit_exceeded' }, { status: 429 })
+    }
+
+    const [firestore, stripe, gemini] = await Promise.all([
+      checkFirestore().catch((err) => ({ ok: false, error: err.message })),
+      checkStripe().catch((err) => ({ ok: false, error: err.message })),
+      checkGemini().catch((err) => ({ ok: false, error: err.message })),
+    ])
+    const ok = firestore.ok && stripe.ok && gemini.ok
+
+    return NextResponse.json(
+      { ok, checks: { firestore, stripe, gemini }, timestamp: new Date().toISOString() },
+      { status: ok ? 200 : 503 }
+    )
+  } catch (err) {
+    logError('Health check endpoint failure', err)
+    return NextResponse.json({ error: 'Health check failed', ok: false }, { status: 500 })
   }
-
-  const [firestore, stripe, gemini] = await Promise.all([
-    checkFirestore().catch((err) => ({ ok: false, error: err.message })),
-    checkStripe().catch((err) => ({ ok: false, error: err.message })),
-    checkGemini().catch((err) => ({ ok: false, error: err.message })),
-  ])
-  const ok = firestore.ok && stripe.ok && gemini.ok
-
-  return NextResponse.json(
-    { ok, checks: { firestore, stripe, gemini }, timestamp: new Date().toISOString() },
-    { status: ok ? 200 : 503 }
-  )
 }

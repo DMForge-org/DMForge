@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
 
 /**
  * Last-resort boundary: catches errors thrown by the root layout itself, where
@@ -9,7 +10,10 @@ import { useEffect } from 'react'
  * ponytail: inline styles on purpose, don't "clean this up" into Tailwind.
  */
 export default function GlobalError({ error, reset }) {
-  useEffect(() => { console.error('Global error:', error) }, [error])
+  useEffect(() => {
+    console.error('Global error:', error)
+    Sentry.captureException(error)
+  }, [error])
 
   return (
     <html lang="en">
