@@ -19,7 +19,7 @@ This document records **why** the system is built the way it is.
 ## 方案选择 (Alternatives Considered)
 
 | Decision | Chosen | Rejected | Why |
-|----------|--------|----------|-----|
+| ---------- | -------- | ---------- | ----- |
 | Language | Plain JavaScript | TypeScript | Solo-maintained, small surface; TS build/typing overhead not worth it. Enforced: no `.ts`/`.tsx`. |
 | API layout | Single catch-all `app/api/[[...path]]/route.js` | One route file per endpoint | One auth/CORS/rate-limit wrapper, one cold start path; trade-off: the file is large (~955 lines, above the 500-line quality guideline) and is the first candidate for a split. |
 | LLM access | Hand-rolled `fetch` to Gemini REST (`lib/llm.js`) | Vercel AI SDK / official SDK | Full control of request shape, no dependency churn, easy routing through Cloudflare AI Gateway via `GEMINI_BASE_URL`. |
@@ -67,7 +67,7 @@ This document records **why** the system is built the way it is.
 ## 变更历史 (Change History)
 
 | Date | Change |
-|------|--------|
+| ------ | -------- |
 | 2026-09-07 | Figma MCP integration doc added (`FIGMA-DESIGN-SYSTEM.md`, linked from `CLAUDE.md`); confirmed no `public/` dir, broken favicon, `framer-motion`/`next-themes` unused |
 | 2026-07-07 | Design-token fix (shadcn HSL triples), anti-slop pass across all pages, WCAG AA button/badge contrast, `.impeccable.md` design context established |
 | 2026-07-06 | Unified brand `Logo` component across pages (990872d); closed open items 1–4: auto-deploy diagnosis, leads/inbox pipeline plan, env docs (c992a0c) |

@@ -115,7 +115,7 @@ function FeaturesGrid() {
     {
       icon: <Globe className="w-5 h-5" />,
       title: "Multi-channel outreach",
-      body: "LinkedIn, email, and SMS ready on day one — more channels shipping soon.",
+      body: "Instagram, Messenger, email, and SMS ready on day one — more channels shipping soon.",
     },
     {
       icon: <Calendar className="w-5 h-5" />,
@@ -190,7 +190,7 @@ function WhyBetter() {
       "7-day trial, card required",
     ],
     ["Pricing model", "Flat $39/mo, all-in", "$99/mo + per-message"],
-    ["Channels", "LinkedIn, SMS, Email", "IG, WhatsApp, Messenger"],
+    ["Channels", "Instagram, Messenger, SMS, Email", "ManyChat: $99/mo + limits"],
     [
       "Open prompt editing",
       "Full visibility, line-by-line",
@@ -374,7 +374,7 @@ function Pricing({ onTry }) {
               </li>
               <li className="flex gap-2">
                 <Check className="w-4 h-4 text-[#34D399] mt-0.5" />
-                LinkedIn + SMS + email channels
+                Instagram + Messenger + SMS + email channels
               </li>
               <li className="flex gap-2">
                 <Check className="w-4 h-4 text-[#34D399] mt-0.5" />
@@ -448,7 +448,7 @@ function Faq() {
     ],
     [
       "Which channels can I connect?",
-      "LinkedIn DMs, email (Gmail or any SMTP inbox), and SMS via Twilio. GoHighLevel webhook sync is already live. More channels are in the pipeline.",
+      "Instagram DMs, Facebook Messenger, email (Gmail or any SMTP inbox), and SMS via Twilio. GoHighLevel webhook sync is already live.",
     ],
     [
       "Can I take over a conversation?",
@@ -518,8 +518,8 @@ function App() {
               seconds.
             </h1>
             <p className="text-lg text-[#A0A0C8] mt-6 max-w-xl">
-              Qualifies your leads and books your calls — over LinkedIn, email,
-              and SMS.{" "}
+              Qualifies your leads and books your calls — over Instagram,
+              Messenger, email, and SMS.{" "}
               <span className="text-white">Test it live right here</span> before
               you connect anything. No card required.
             </p>
@@ -531,8 +531,8 @@ function App() {
                 <Check className="w-4 h-4 text-[#34D399]" /> Flat pricing
               </div>
               <div className="flex items-center gap-2 text-sm text-[#A0A0C8]">
-                <Check className="w-4 h-4 text-[#34D399]" /> LinkedIn, SMS &amp;
-                email
+                <Check className="w-4 h-4 text-[#34D399]" /> Instagram,
+                Messenger, SMS &amp; email
               </div>
             </div>
             <div className="mt-8 flex items-center gap-3">
@@ -584,7 +584,7 @@ function App() {
       <section className="border-y border-[#2A2A55]/60 py-6">
         <div className="max-w-7xl mx-auto px-5 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-[#A0A0C8] text-sm">
           <span>Used by coaches who run on:</span>
-          <span className="font-semibold text-white">LinkedIn</span>
+          <span className="font-semibold text-white">Instagram &amp; Messenger</span>
           <span className="font-semibold text-white">GoHighLevel</span>
           <span className="font-semibold text-white">Twilio SMS</span>
           <span className="font-semibold text-white">Zapier</span>

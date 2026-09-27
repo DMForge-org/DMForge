@@ -77,18 +77,14 @@ export default function WebhooksSettings() {
     }
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-[#A0A0C8]">Loading…</div>
-  if (!user) return <div className="min-h-screen flex items-center justify-center text-[#A0A0C8]">Sign in to manage webhooks.</div>
+  if (loading) return <div className="text-[#A0A0C8] py-8">Loading…</div>
+  if (!user) return <div className="text-[#A0A0C8] py-8">Sign in to manage webhooks.</div>
 
   const urlIsHttps = /^https:\/\//.test(url.trim())
 
   return (
-    <div className="min-h-screen max-w-2xl mx-auto px-5 py-10">
-      <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-[#A0A0C8] hover:text-white mb-6">
-        <ArrowLeft className="w-4 h-4" /> Back to dashboard
-      </Link>
-      <h1 className="font-display text-3xl font-bold mb-2 flex items-center gap-2"><Webhook className="w-6 h-6 text-[#6B5BFF]" /> Webhooks</h1>
-      <p className="text-sm text-[#A0A0C8] mb-8">
+    <div className="space-y-6">
+      <p className="text-sm text-[#A0A0C8] mb-4">
         Get a signed POST every time a lead books a call — point it at Zapier, Make, or your own server.
       </p>
 

@@ -157,8 +157,8 @@ export default function InboxPage() {
         <Card className="bg-[#161630] border-[#2A2A55] p-4 mb-4 space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <Input aria-label="Name" placeholder="Name" value={newLead.name} onChange={(e) => setNewLead({ ...newLead, name: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />
-            <select aria-label="Lead channel" value={newLead.channel} onChange={(e) => setNewLead({ ...newLead, channel: e.target.value })} className="bg-[#0F0F26] border border-[#2A2A55] rounded-md px-3 text-sm">
-              {['linkedin', 'email', 'sms', 'manual'].map((c) => <option key={c} value={c}>{c}</option>)}
+            <select aria-label="Lead channel" value={newLead.channel} onChange={(e) => setNewLead({ ...newLead, channel: e.target.value })} className="bg-[#0F0F26] border border-[#2A2A55] rounded-md px-3 text-sm capitalize">
+              {['instagram', 'messenger', 'email', 'sms', 'manual'].map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             <Input aria-label="Handle" placeholder="@handle" value={newLead.handle} onChange={(e) => setNewLead({ ...newLead, handle: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />
             <Input aria-label="Phone" placeholder="Phone (for reminders)" value={newLead.phone} onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })} className="bg-[#0F0F26] border-[#2A2A55]" />

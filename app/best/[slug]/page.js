@@ -16,7 +16,7 @@ const NICHES = ['fitness-coaches','nutrition-coaches','business-coaches','life-c
 
 const FIXED_PAGES = {
   'ai-dm-setter': { h1: 'The best AI DM setter for coaches in 2026', intent: 'best ai dm setter', desc: 'A ranked comparison of the top AI DM appointment setters for online coaches in 2026. Pricing, features, channels, and conversion rates.' },
-  'instagram-dm-bot': { h1: 'The best AI DM bot for high-ticket coaches', intent: 'best ai dm bot for coaches', desc: 'The top AI DM bots for coaches in 2026 — with real AI qualification, in-chat booking, and flat pricing. Covers LinkedIn, email, SMS and more.' },
+  'instagram-dm-bot': { h1: 'The best AI DM bot for high-ticket coaches', intent: 'best ai dm bot for coaches', desc: 'The top AI DM bots for coaches in 2026 — with real AI qualification, in-chat booking, and flat pricing. Covers Instagram, Messenger, email, SMS and more.' },
   'whatsapp-ai-agent': { h1: 'The best AI messaging agent for coaches', intent: 'best ai messaging agent for coaches', desc: 'The top AI messaging agents for high-ticket coach funnels in 2026 — comparison of features, pricing, and channel support.' },
   'ai-setter-for-coaches': { h1: 'The best AI appointment setter built specifically for coaches', intent: 'ai setter for coaches', desc: 'Six AI appointment setters compared on the exact criteria coaches care about: 60-second setup, in-chat booking, flat pricing, open prompt.' },
   'comment-to-dm-tools': { h1: 'The best comment-to-DM automation tools in 2026', intent: 'best comment to dm tool', desc: 'Comment-to-DM converts 3-5x better than story replies. Here are the top tools to set it up.' },
@@ -61,7 +61,7 @@ export async function generateMetadata({ params }) {
 
 // Top 6 ranked list used on every page
 const RANKING = [
-  { name: 'DMForge', tagline: 'AI DM setters you can actually test before you trust them', price: '$0 free / $39 Pro / $199 Agency', why: ['Live-test in 60 seconds — no approval process needed', 'Flat pricing — unlimited messages on Pro', 'LinkedIn, SMS & email channels ready today', 'Open prompt — edit in plain English', 'Branded share links per result'], cta: '/' },
+  { name: 'DMForge', tagline: 'AI DM setters you can actually test before you trust them', price: '$0 free / $39 Pro / $199 Agency', why: ['Live-test in 60 seconds — no approval process needed', 'Flat pricing — unlimited messages on Pro', 'Instagram, Messenger, SMS & email channels ready today', 'Open prompt — edit in plain English', 'Branded share links per result'], cta: '/' },
   { competitorSlug: 'setsmart' },
   { competitorSlug: 'manychat' },
   { competitorSlug: 'chatfuel' },

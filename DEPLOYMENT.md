@@ -3,7 +3,7 @@
 This document describes how DMForge is deployed, how the scheduler works, how to manage secrets, and how to recover from failures.
 
 **Last updated:** July 15, 2026  
-**Contact:** tiborcc2@gmail.com  
+**Contact:** <tiborcc2@gmail.com>  
 **Project:** DMForge (DM appointment-setter SaaS)
 
 ---
@@ -115,6 +115,7 @@ firebase firestore:list-documents reminders --database=dmforge
 ### Debugging Failed Reminders
 
 1. **Check Firestore logs:**
+
    ```bash
    firebase functions:log --only sendReminders --lines 50 | grep -i error
    ```
@@ -206,12 +207,14 @@ firebase functions:secrets:set ENCRYPTION_KEY
 ### Typical Flow
 
 1. **Local development:**
+
    ```bash
    yarn dev                    # Start dev server (port 3000)
    yarn test:e2e BASE_URL=http://localhost:3000  # Test locally
    ```
 
 2. **Push to branch:**
+
    ```bash
    git add .
    git commit -m "feat: add SMS reminder scheduling"  # Conventional Commits
@@ -228,6 +231,7 @@ firebase functions:secrets:set ENCRYPTION_KEY
    - Approves or requests changes
 
 5. **Merge to main:**
+
    ```bash
    # Merge via GitHub UI or:
    git merge my-feature-branch
@@ -239,6 +243,7 @@ firebase functions:secrets:set ENCRYPTION_KEY
    - Vercel sends status to GitHub (green checkmark if successful)
 
 7. **Post-deploy:**
+
    ```bash
    # Monitor for errors (5 min)
    # Check Sentry dashboard
@@ -249,6 +254,7 @@ firebase functions:secrets:set ENCRYPTION_KEY
 ### High-Risk Deployments (Database Migrations, Auth Changes)
 
 1. Deploy to **staging first:**
+
    ```bash
    # Via Vercel dashboard: create/preview deployment, test thoroughly
    ```
@@ -300,7 +306,7 @@ firebase deploy --only functions
 
 1. **Check if backup exists:**
    - Firebase Console → Firestore → Backups (manual backups only; auto backups not available in free tier)
-   
+
 2. **Restore from backup:**
    - Firebase Console → Backups → Select backup → "Restore"
 
@@ -341,6 +347,7 @@ NEXT_PUBLIC_FIREBASE_API_KEY=AIz...
 **Diagnosis:**
 
 1. Check if function is running:
+
    ```bash
    firebase functions:log --only sendReminders
    ```
@@ -354,6 +361,7 @@ NEXT_PUBLIC_FIREBASE_API_KEY=AIz...
    - Confirm `connected: true` and `encryptedCreds` exists
 
 4. Check Twilio credentials:
+
    ```bash
    # Decrypt and test manually via Twilio API
    curl -X POST https://api.twilio.com/2010-04-01/Accounts/{accountSid}/Messages.json \
@@ -391,10 +399,12 @@ vercel build --verbose
 ### Automated Alerts (Setup)
 
 **Sentry:**
+
 - Threshold: Alert on 5+ errors in 5 minutes
 - Destination: Slack #alerts
 
 **Firebase:**
+
 - Console → Settings → Notifications → Alert policy
 - Alert on high daily costs or high error rates
 
@@ -416,8 +426,8 @@ vercel build --verbose
 ## 10. Contacts & Escalation
 
 | Issue | Contact | Urgency |
-|-------|---------|---------|
-| Site down (404 / 500 errors) | tiborcc2@gmail.com | P0 (immediate) |
+| ------- | --------- | --------- |
+| Site down (404 / 500 errors) | <tiborcc2@gmail.com> | P0 (immediate) |
 | SMS reminders not sending | Check Firebase logs first, then escalate | P1 (1 hour) |
 | Stripe webhook failures | Stripe dashboard → Webhooks, then escalate | P1 (1 hour) |
 | Memory/cost spikes | Check Firestore queries, consider indexing | P2 (4 hours) |

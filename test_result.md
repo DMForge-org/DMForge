@@ -52,7 +52,7 @@ ALL agents MUST follow these rules. Do NOT edit this section.
 
 **Date**: Current session  
 **Tester**: Backend Testing Sub-agent  
-**Base URL**: https://insight-forge-172.preview.emergentagent.com/api  
+**Base URL**: <https://insight-forge-172.preview.emergentagent.com/api>  
 **Status**: ✅ ALL TESTS PASSED (18/18)
 
 #### Test Coverage
@@ -64,11 +64,11 @@ ALL agents MUST follow these rules. Do NOT edit this section.
 5. ✅ **POST /api/agent/chat** - Multi-turn conversation returns conversational reply with state JSON
 6. ✅ **POST /api/agent/chat** - Invalid agentId returns 404 error
 7. ✅ **POST /api/result/save** - Saves transcript and state, returns id and shareUrl
-8. ✅ **GET /api/result/:id** - Retrieves saved result without _id field
+8. ✅ **GET /api/result/:id** - Retrieves saved result without \_id field
 9. ✅ **GET /api/competitors** - Returns 12 competitor entries
 10. ✅ **GET /api/me?email=x** - Returns `{user:null}` for non-existent user
 11. ✅ **GET /api/plans** - Returns all 3 plans (pro_monthly, pro_annual, agency)
-12. ✅ **POST /api/billing/checkout** - pro_monthly plan returns valid Stripe checkout URL (https://checkout.stripe.com/...)
+12. ✅ **POST /api/billing/checkout** - pro_monthly plan returns valid Stripe checkout URL (<https://checkout.stripe.com/>...)
 13. ✅ **POST /api/billing/checkout** - pro_annual plan returns valid Stripe checkout URL
 14. ✅ **POST /api/billing/checkout** - agency plan returns valid Stripe checkout URL
 15. ✅ **POST /api/billing/checkout** - Missing fields returns 400 error
@@ -78,14 +78,14 @@ ALL agents MUST follow these rules. Do NOT edit this section.
 
 #### Key Findings
 
-- **CORS**: All endpoints return proper CORS headers (Access-Control-Allow-Origin: *)
+- **CORS**: All endpoints return proper CORS headers (Access-Control-Allow-Origin: \*)
 - **LLM Integration**: Gemini API working correctly - agent/create generates real script with intro and 4-6 questions
 - **Multi-turn Chat**: Conversational flow works - intro on empty messages, contextual replies on subsequent turns
-- **Stripe LIVE Mode**: ⚠️ App is using LIVE Stripe keys (sk_live_...) - checkout URLs are real and functional
+- **Stripe LIVE Mode**: ⚠️ App is using LIVE Stripe keys (sk*live*...) - checkout URLs are real and functional
 - **Webhook**: Accepts unsigned payloads (STRIPE_WEBHOOK_SECRET is empty) - dev fallback working as expected
 - **Error Handling**: Proper 400/404 responses for invalid inputs
 - **Data Persistence**: MongoDB integration working - agents and results saved/retrieved correctly
-- **No _id Leakage**: Result endpoint correctly excludes MongoDB _id field
+- **No \_id Leakage**: Result endpoint correctly excludes MongoDB \_id field
 
 #### Notes
 
@@ -101,10 +101,10 @@ ALL agents MUST follow these rules. Do NOT edit this section.
 
 **Date**: June 25, 2026  
 **Tester**: Frontend Testing Sub-agent  
-**Base URL**: https://insight-forge-172.preview.emergentagent.com  
+**Base URL**: <https://insight-forge-172.preview.emergentagent.com>  
 **Status**: ⚠️ PARTIAL PASS (9/12 tests passed, 3 critical issues found)
 
-#### Test Coverage
+##### Test Coverage
 
 **✅ PASSED (9 tests):**
 
@@ -145,7 +145,7 @@ ALL agents MUST follow these rules. Do NOT edit this section.
 
 **Dashboard Verification:**
 
-- ✅ User email displayed: test+playwright-1782400544584@dmforge.test
+- ✅ User email displayed: <test+playwright-1782400544584@dmforge.test>
 - ✅ Plan badge: Free
 - ❌ Agent count: 0 (expected: 1)
 - ❌ Transcript count: 0 (expected: 0, as save failed)
@@ -187,7 +187,7 @@ ALL agents MUST follow these rules. Do NOT edit this section.
 
 - Screenshots saved: 01-authenticated-nav.png, 02-chat-simulator.png, 03-conversation.png, dashboard-verified.png
 - Console logs captured in automation output
-- Test email: test+playwright-1782400544584@dmforge.test (password: testpass123)
+- Test email: <test+playwright-1782400544584@dmforge.test> (password: testpass123)
 
 #### Recommendations
 

@@ -132,7 +132,7 @@ bloat. Files are in `.claude/agents/` next to this doc.
 | Agent | Owns (files) | First jobs it should pick up |
 |---|---|---|
 | **billing-stripe** | `lib/stripe.js`, `app/api/stripe/webhook/route.js`, billing endpoints in the catch-all route | Verify + fix the `current_period_end` field-location bug; de-dupe the two `syncSubscription` copies |
-| **channels-integrations** | `lib/email.js` `lib/sms.js` `lib/linkedin.js` `lib/ghl.js` `lib/encryption.js` + channel/integration endpoints | Confirm LinkedIn (OIDC vs legacy) + GHL (v1 vs v2) API shapes; add key-version tag to `encryption.js` |
+| **channels-integrations** | `lib/email.js` `lib/sms.js` `lib/meta.js` `lib/ghl.js` `lib/encryption.js` + channel/integration endpoints | Meta Graph API v21.0 (Instagram/Messenger) + GHL (v1 vs v2) API shapes; key-version tag in `encryption.js` |
 | **leads-model** | *new* `leads/{uid}/prospects` subsystem + inbound-reply ingestion; then inbox + auto-triggers | Design the lead/prospect model; wire SMS-on-booked, GHL-sync-on-booked, and the inbox |
 | **api-security** | `app/api/[[...path]]/route.js`, `lib/rateLimit.js`, `next.config.js` CORS/headers | Add auth guards to `/agent/create` + `/agent/chat`; lock CORS default; wrap fire-and-forget in `after()` |
 | **lead-enricher** | Bright Data integration (CLI or `@brightdata/sdk`); enrichment endpoint/util | Stand up enrichment; feed signals into qualification/scoring (depends on `leads-model`) |

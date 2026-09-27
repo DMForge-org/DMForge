@@ -2,9 +2,9 @@
 name: channels-integrations
 description: >-
   Use for DMForge's outbound channels and third-party integrations — email (SMTP), SMS
-  (Twilio), LinkedIn OAuth, GoHighLevel — and the at-rest credential encryption they share.
-  Owns lib/email.js, lib/sms.js, lib/linkedin.js, lib/ghl.js, lib/encryption.js, and the
-  /channels/* + /integrations/* + /auth/linkedin* endpoints. Returns a diff plus a note on
+  (Twilio), Meta Graph API (Instagram DM & Messenger), GoHighLevel — and the at-rest credential encryption they share.
+  Owns lib/email.js, lib/sms.js, lib/meta.js, lib/ghl.js, lib/encryption.js, and the
+  /channels/* + /integrations/* + /webhooks/meta endpoints. Returns a diff plus a note on
   which external API shapes were verified against current docs.
 tools: Read, Grep, Glob, Edit, Bash, WebSearch, WebFetch
 model: sonnet
@@ -19,16 +19,15 @@ Files you own:
   channel. **Requires `ENCRYPTION_KEY` in env or every connect 500s.**
 - `lib/email.js` — Gmail-via-SMTP / generic SMTP (nodemailer). App-password, not OAuth.
 - `lib/sms.js` — Twilio REST via fetch (no SDK).
-- `lib/linkedin.js` — 3-legged OAuth + message send.
+- `lib/meta.js` — Meta Graph API v21.0 Page token verification and message send.
 - `lib/ghl.js` — GoHighLevel v1 REST (API-key Bearer).
-- Endpoints in the catch-all route: `/channels/{email,sms,linkedin}/*`,
-  `/integrations/ghl/*`, `/auth/linkedin[/callback]`, `/outreach/*`.
+- Endpoints in the catch-all route: `/channels/{email,sms,instagram,messenger}/*`,
+  `/integrations/ghl/*`, `/webhooks/meta`, `/outreach/*`.
 
 Verify-before-shipping (each carries an honest "needs a real account / API is moving" flag):
-- **LinkedIn**: current scopes are the pre-OIDC `r_liteprofile`/`r_emailaddress`/
-  `w_member_social` with `/v2/me`. LinkedIn largely moved to OpenID Connect
-  (`openid profile email` + `/v2/userinfo`). Check what the registered app is approved for
-  and match it. The `/v2/messages` send shape varies by product approval — verify.
+- **Meta (Instagram & Messenger)**: Graph API v21.0 with Page Access Tokens. Webhooks
+  require hub challenge verification and HMAC-SHA256 signature verification. Messages must
+  respect the standard 24-hour business messaging window.
 - **GoHighLevel**: code uses **v1** (`rest.gohighlevel.com/v1`). v2
   (`services.leadconnectorhq.com` + OAuth) is superseding it. Confirm which target agencies
   use before relying on v1.

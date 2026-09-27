@@ -14,4 +14,4 @@ We aim to acknowledge reports within 5 business days. DMForge handles customer p
 
 ## Scope
 
-This policy covers the DMForge application and API (this repository). Third-party services we integrate with (Firebase, Stripe, Twilio, GoHighLevel, LinkedIn) should be reported to those vendors directly.
+This policy covers the DMForge application and API (this repository). Third-party services we integrate with (Firebase, Stripe, Twilio, GoHighLevel, Meta) should be reported to those vendors directly.

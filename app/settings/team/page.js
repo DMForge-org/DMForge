@@ -55,18 +55,14 @@ export default function TeamSettings() {
     }
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-[#A0A0C8]">Loading…</div>
-  if (!user) return <div className="min-h-screen flex items-center justify-center text-[#A0A0C8]">Sign in to manage your team.</div>
+  if (loading) return <div className="text-[#A0A0C8] py-8">Loading…</div>
+  if (!user) return <div className="text-[#A0A0C8] py-8">Sign in to manage your team.</div>
 
   const role = data?.role
   const agency = data?.agency
 
   return (
-    <div className="min-h-screen max-w-3xl mx-auto px-5 py-10">
-      <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-[#A0A0C8] hover:text-white mb-6">
-        <ArrowLeft className="w-4 h-4" /> Back to dashboard
-      </Link>
-      <h1 className="font-display text-3xl font-bold mb-2 flex items-center gap-2"><Users className="w-6 h-6 text-[#6B5BFF]" /> Team</h1>
+    <div className="space-y-6">
 
       {role === 'member' && agency ? (
         <Card className="bg-[#161630] border-[#2A2A55] p-6 mt-6">

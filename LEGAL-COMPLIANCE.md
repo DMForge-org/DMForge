@@ -41,6 +41,7 @@ Live outbound channels today: **LinkedIn DMs** (`lib/linkedin.js`) and **email**
 Requires disclosing to a person that they're interacting with AI, "before or at the very beginning" of the interaction — a disclosure buried in a privacy policy doesn't count; it has to be perceivable in the conversation itself. Applies if DMForge (or a coach using it) contacts anyone in the EU.
 
 **This is the one real tension I did not code around, on purpose.** The script-generation prompt in `app/api/[[...path]]/route.js` (`/api/agent/create`, ~line 167) explicitly instructs the model to write DMs that "sound like a human coach typing on phone, never robotic" — and that generated `intro`/`bookingMessage` text is sent to real leads verbatim. Adding an explicit AI-disclosure line to every first message is a product/conversion decision as much as a legal one — it changes the tone of the entire cold-outreach flow the business is built around. Options, roughly in order of how much they change the product:
+
 1. Add a subtle, one-time disclosure line to the generated intro (e.g., a short "(AI-assisted)" tag) — smallest compliance fix, some conversion cost.
 2. Geofence the disclosure to leads with an EU/California signal only, if that's ever detectable — reduces the tradeoff but adds complexity and isn't airtight.
 3. Accept the risk for now if your customer base and their leads are predominantly UK/US outside California, and revisit before actively marketing to EU-based coaches or their leads.
@@ -48,8 +49,7 @@ This needs your call, ideally with a solicitor's read on how strictly "before or
 
 ## Platform-specific (flagged, not auto-fixed)
 
-- **LinkedIn User Agreement**: prohibits automation tools for messaging. `lib/linkedin.js` sends real automated DMs through an unofficial OAuth integration — this is a live feature, and the ToS risk (account restriction, not a fine) is a business decision about how much of the product depends on it, not something with a code fix.
-- **Meta / Instagram Messaging API**: not relevant today since Instagram isn't built. If it's ever built, Meta requires the official Instagram Messaging API, Business Verification, and App Review (2-4+ weeks), plus a 24-hour messaging window and ~200 msg/hour rate limit — automating Instagram DMs outside that official path is itself a ToS violation, separate from the false-advertising issue already fixed.
+- **Meta Platform Terms & Graph API (Instagram DM & Messenger)**: DMForge integrates via official Meta Graph API v21.0 using Page Access Tokens and standard Webhooks. Inbound messages open a 24-hour standard messaging window during which the AI setter can qualify leads and propose calendar slots. Automated messages adhere to Meta's standard rate limits and policies. LinkedIn integration was fully retired to eliminate false states and unofficial scraping risks.
 
 ## Stripe restricted-business terms — resolved
 

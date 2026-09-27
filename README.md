@@ -1,6 +1,6 @@
 # DMForge
 
-AI DM appointment setter SaaS for online coaches. Build, live-test, and deploy AI agents that handle LinkedIn and email outreach, qualify leads, and book sales calls automatically — with SMS appointment reminders.
+AI DM appointment setter SaaS for online coaches. Build, live-test, and deploy AI agents that handle Instagram DM, Facebook Messenger, and email outreach, qualify leads, and book sales calls automatically — with SMS appointment reminders.
 
 ## Tech Stack
 
@@ -80,9 +80,9 @@ See `.env.example` for all required variables. Key notes:
 - **`STRIPE_WEBHOOK_SECRET`** — Required in production. Get it from the Stripe dashboard → Webhooks → your endpoint.
 - **`NEXT_PUBLIC_BASE_URL`** — Your public domain, used for Stripe redirect URLs.
 - **`NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`** — Must match your deployed domain for Firebase Auth to work.
-- **`ENCRYPTION_KEY`** — New. Any random string (32+ chars recommended); hashed to a 32-byte AES-256-GCM key for encrypting connected-channel credentials at rest (`lib/encryption.js`). Required before the email channel (or any future channel using the same helper) can connect. **Not yet set in Vercel — add it before this ships.**
+- **`ENCRYPTION_KEY`** — Any random string (32+ chars recommended); hashed to a 32-byte AES-256-GCM key for encrypting connected-channel credentials at rest (`lib/encryption.js`). Required for channel connections (email, SMS, Instagram, Messenger, GHL).
 - **`GEMINI_BASE_URL`** — Optional. Overrides the Gemini host in `lib/llm.js`. Leave unset to call Google directly (`https://generativelanguage.googleapis.com`). Set it to a [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) instance (e.g. `http://127.0.0.1:8317`) to route all LLM calls through CLI-based auth instead of a paid `GEMINI_API_KEY` — the proxy serves the same `/v1beta/models/{model}:generateContent` shape, so no code changes are needed. When this is set, `GEMINI_API_KEY` is optional (the proxy carries its own auth).
-- **`LINKEDIN_CLIENT_ID` / `LINKEDIN_CLIENT_SECRET` / `LINKEDIN_REDIRECT_URI`** — New, for the LinkedIn outreach channel. Create a LinkedIn app at developer.linkedin.com, add the `r_liteprofile`, `r_emailaddress`, `w_member_social` scopes, and set the redirect URI to `https://www.dmforge.org/api/auth/linkedin/callback`. **Not yet set — LinkedIn connect returns 503 until these exist.** State signing reuses `ENCRYPTION_KEY`.
+- **`META_VERIFY_TOKEN` / `META_APP_SECRET`** — Optional, for Meta Webhook verification challenge and inbound HMAC-SHA256 signature verification. Set `META_VERIFY_TOKEN` to match the verify token configured in your Meta Developer App Webhooks (Instagram & Messenger). Individual user Page Access Tokens and Account IDs are encrypted per-user in Firestore.
 - **`CRON_SECRET`** — New, optional but recommended. When set, the `/api/cron/send-reminders` endpoint requires `Authorization: Bearer <CRON_SECRET>` (Vercel attaches this automatically for scheduled cron invocations). Leave unset only for local testing — an unset secret leaves the cron endpoint open. **Twilio credentials are stored per-user (encrypted), not as env vars** — so `TWILIO_ACCOUNT_SID`/`AUTH_TOKEN`/`FROM_NUMBER` from the spec are not used; each user connects their own in Settings → Channels.
 - **`GHL_WEBHOOK_SECRET`** — New, optional but recommended. When set, `/api/integrations/ghl/webhook` requires a valid `x-ghl-signature` (HMAC-SHA256 of the raw body). GHL API keys/location IDs are stored per-user (encrypted), not as env vars.
 
@@ -166,10 +166,14 @@ components/
 | DELETE | `/api/channels/email` | required | Disconnect email channel |
 | GET | `/api/channels` | required | List connected channels |
 | POST | `/api/outreach/send` | required | Send an email via the connected channel |
-| GET | `/api/auth/linkedin` | required | Get LinkedIn OAuth consent URL |
-| GET | `/api/auth/linkedin/callback` | — | OAuth callback (browser redirect) |
-| POST | `/api/outreach/linkedin/send` | required | Send a LinkedIn message |
-| DELETE | `/api/channels/linkedin` | required | Disconnect LinkedIn |
+| POST | `/api/channels/instagram/connect` | required | Connect Instagram Professional account (Page Token + IG Account ID) |
+| DELETE | `/api/channels/instagram` | required | Disconnect Instagram channel |
+| POST | `/api/channels/messenger/connect` | required | Connect Facebook Messenger (Page Token + Page ID) |
+| DELETE | `/api/channels/messenger` | required | Disconnect Messenger channel |
+| POST | `/api/outreach/instagram/send` | required | Send an outbound Instagram DM |
+| POST | `/api/outreach/messenger/send` | required | Send an outbound Messenger message |
+| GET | `/api/webhooks/meta` | — | Meta Webhook hub verification challenge |
+| POST | `/api/webhooks/meta` | optional sig | Inbound Instagram & Messenger DM webhook handler |
 | POST | `/api/agency/invite` | required (owner) | Invite a team member |
 | GET | `/api/agency/accept` | required | Accept an invite (`?token=`) |
 | POST | `/api/agency/remove` | required (owner) | Remove a member |

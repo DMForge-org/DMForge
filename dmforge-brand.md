@@ -3,7 +3,7 @@
 ## Colors
 
 | token | hex | use |
-|---|---|---|
+| --- | --- | --- |
 | primary (coral) | `#FF4D6D` | brand primary, "DM" in wordmark, tile start |
 | primary-hover | `#FF6B85` | hover |
 | orange | `#FF7A3D` | CTA gradient end, tile end |

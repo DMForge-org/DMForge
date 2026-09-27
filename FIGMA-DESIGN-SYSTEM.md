@@ -26,6 +26,7 @@ Style Dictionary / theme file — the CSS custom properties *are* the source of 
 `border`/`input`/`ring`/`background`/`foreground`) and derives `borderRadius.lg/md/sm` from `--radius`.
 
 **Do this when translating Figma tokens:**
+
 - A Figma color style becomes an HSL triple added to `:root` in `globals.css`, then referenced through
   Tailwind's semantic class (`bg-primary`, `text-muted-foreground`) — never a raw hex utility (`bg-[#FF4D6D]`)
   except in the handful of places already doing that deliberately (see `components/logo.jsx`, which hardcodes
@@ -166,6 +167,7 @@ import { ArrowLeft, Mail, CheckCircle2, Link2, MessageSquare } from 'lucide-reac
 2. **`cva`** for component-level style variants (see §2).
 3. **`cn()`** (`clsx` + `tailwind-merge`, in [lib/utils.js](lib/utils.js)) for merging/conditional class
    names — this is required for any conditional className, not optional style preference:
+
    ```js
    export function cn(...inputs) { return twMerge(clsx(inputs)); }
    ```

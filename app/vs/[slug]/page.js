@@ -27,7 +27,7 @@ export default async function VsPage({ params }) {
   const faqs = [
     [`Is DMForge cheaper than ${c.name}?`, `${c.name} is ${c.price}. DMForge is a flat $39/mo with no per-message charges. For most coaches sending 1,000+ qualified DMs/mo, DMForge is meaningfully cheaper.`],
     [`Can I test DMForge before I commit?`, `Yes — free forever tier, no credit card. You can also live-test the AI agent right on our homepage in 60 seconds without signing up.`],
-    [`Which channels does DMForge support?`, `DMForge currently supports LinkedIn DMs, email (Gmail or any SMTP inbox), and SMS via Twilio. GoHighLevel webhook sync is also live. More channels are in the pipeline. ${c.name} supports: ${c.channels.join(', ')}.`],
+    [`Which channels does DMForge support?`, `DMForge currently supports Instagram DMs, Facebook Messenger, email (Gmail or any SMTP inbox), and SMS via Twilio. GoHighLevel webhook sync is also live. ${c.name} supports: ${c.channels.join(', ')}.`],
     [`Is there any risk to my social accounts?`, `DMForge connects to channels via official OAuth flows — no scraping, no password sharing. Your accounts stay safe.`],
     [`How long does setup take vs ${c.name}?`, `DMForge is under 60 seconds end-to-end. ${c.name} typically takes 15-30 minutes to configure.`],
   ]
@@ -66,7 +66,7 @@ export default async function VsPage({ params }) {
             <h3 className="font-display text-xl font-bold mb-3">DMForge</h3>
             <p className="text-sm text-[#A0A0C8] mb-2"><span className="font-semibold text-white">Price:</span> $39/mo flat, $390/yr</p>
             <p className="text-sm text-[#A0A0C8] mb-2"><span className="font-semibold text-white">Free tier:</span> Forever, no credit card</p>
-            <p className="text-sm text-[#A0A0C8] mb-4"><span className="font-semibold text-white">Channels:</span> LinkedIn, SMS, Email (more coming)</p>
+            <p className="text-sm text-[#A0A0C8] mb-4"><span className="font-semibold text-white">Channels:</span> Instagram, Messenger, SMS, Email</p>
             <div className="text-xs font-semibold text-[#FF4D6D] mb-1">WHERE DMFORGE WINS</div>
             <ul className="text-sm space-y-1">{c.wins.map((s,i)=> <li key={i}>✨ {s}</li>)}</ul>
           </div>

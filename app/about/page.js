@@ -18,7 +18,7 @@ export default function AboutPage() {
           it handles the DM conversations and hands off warm, pre-qualified leads to your calendar.
         </p>
         <p className="text-lg leading-relaxed">
-          Connect your channels (LinkedIn, email, SMS), set your qualification criteria, and let
+          Connect your channels (Instagram, Messenger, email, SMS), set your qualification criteria, and let
           your agent run 24/7. Every conversation follows your tone and closes to a booked call.
         </p>
       </section>

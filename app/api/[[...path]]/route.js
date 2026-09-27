@@ -56,10 +56,11 @@ import {
   listChannels,
   sendEmailOutreach,
   handleEmailUnsubscribe,
-  getLinkedInAuthUrl,
-  handleLinkedInCallback,
-  sendLinkedInOutreach,
-  disconnectLinkedInChannel,
+  connectInstagramChannel,
+  disconnectInstagramChannel,
+  connectMessengerChannel,
+  disconnectMessengerChannel,
+  sendMetaOutreach,
 } from "@/lib/services/channelService";
 import {
   getAdminDb,
@@ -79,12 +80,7 @@ import { triggerWebhooks } from "@/lib/webhooks";
 import { encrypt, decrypt } from "@/lib/encryption";
 import { testConnection as testEmailConnection, sendEmail } from "@/lib/email";
 import { sendMail } from "@/lib/mail";
-import {
-  authorizeUrl as linkedinAuthorizeUrl,
-  exchangeCode as linkedinExchangeCode,
-  fetchProfile as linkedinFetchProfile,
-  sendMessage as linkedinSendMessage,
-} from "@/lib/linkedin";
+
 import { testTwilio, sendSMS } from "@/lib/sms";
 import {
   ghlValidate,
@@ -193,7 +189,12 @@ function sanitizeReply(reply) {
 // keeping value, not something to sell. ponytail: a new channel needs a label
 // here or the support bot silently stops mentioning it — better than the old
 // failure mode, which was mentioning four channels that never existed.
-const CHANNEL_LABELS = { linkedin: "LinkedIn", email: "email", sms: "SMS" };
+const CHANNEL_LABELS = {
+  instagram: "Instagram DM",
+  messenger: "Facebook Messenger",
+  email: "email",
+  sms: "SMS",
+};
 
 function formatPrice(amountInCents) {
   const dollars = amountInCents / 100;
@@ -1140,187 +1141,183 @@ Rules:
       );
     }
 
-    // GET /api/auth/linkedin — returns the consent URL (auth required; browser
-    // navigations can't carry the Bearer header, so we sign the uid into state).
-    // GET /api/auth/linkedin — returns the consent URL
-    if (route === "/auth/linkedin" && method === "GET") {
-      if (!decoded)
-      if (!process.env.LINKEDIN_CLIENT_ID) {
+    // POST /api/channels/instagram/connect — auth required
+    if (
+      path[0] === "channels" &&
+      path[1] === "instagram" &&
+      path[2] === "connect" &&
+      method === "POST"
+    ) {
+      if (!decoded) {
         return handleCORS(
           request,
           NextResponse.json({ error: "unauthorized" }, { status: 401 }),
-          NextResponse.json({ error: "LinkedIn not configured" }, { status: 503 }),
         );
-      if (!process.env.LINKEDIN_CLIENT_ID)
-        return handleCORS(
-          request,
-          NextResponse.json(
-            { error: "LinkedIn not configured" },
-            { status: 503 },
-          ),
-        );
-      const state = encrypt(
-        JSON.stringify({ uid: decoded.uid, ts: Date.now() }),
-      );
-      return handleCORS(
-        request,
-        NextResponse.json({ url: linkedinAuthorizeUrl(state) }),
-      );
       }
-      const res = getLinkedInAuthUrl({ user: decoded });
+      const raw = await request.json().catch(() => null);
+      const res = await connectInstagramChannel({
+        db,
+        FieldValue,
+        user: decoded,
+        body: raw,
+      });
       return handleCORS(request, NextResponse.json(res));
     }
 
-    // GET /api/auth/linkedin/callback — browser redirect from LinkedIn
-    if (route === "/auth/linkedin/callback" && method === "GET") {
-      const url = new URL(request.url);
-      const code = url.searchParams.get("code");
-      const state = url.searchParams.get("state");
-      const base = process.env.NEXT_PUBLIC_BASE_URL || "";
-      const fail = (reason) =>
-        handleCORS(
-          request,
-          NextResponse.redirect(
-            `${base}/settings/channels?linkedin=error&reason=${encodeURIComponent(reason)}`,
-          ),
-        );
-      if (!code || !state) return fail("missing_code_or_state");
-      let uid;
-      try {
-        const parsed = JSON.parse(decrypt(state));
-        uid = parsed.uid;
-        if (!uid || Date.now() - parsed.ts > 10 * 60_000)
-          return fail("state_expired");
-      } catch (err) {
-        logError("LinkedIn state decryption failed", err);
-        return fail("invalid_state");
-      }
-      try {
-        const token = await linkedinExchangeCode(code);
-        let profile = {};
-        try {
-          profile = await linkedinFetchProfile(token.access_token);
-        } catch (e) {
-          logError("LinkedIn profile fetch failed", e);
-        }
-        await db
-          .collection("users")
-          .doc(uid)
-          .collection("channels")
-          .doc("linkedin")
-          .set({
-            provider: "linkedin",
-            connected: true,
-            email: profile.firstName
-              ? `${profile.firstName} ${profile.lastName}`.trim()
-              : null,
-            profile: {
-              id: profile.id || null,
-              firstName: profile.firstName || null,
-              lastName: profile.lastName || null,
-              headline: profile.headline || null,
-              profileUrl: profile.id
-                ? `https://www.linkedin.com/in/${profile.id}`
-                : null,
-            },
-            encryptedCreds: encrypt(
-              JSON.stringify({
-                access_token: token.access_token,
-                expires_in: token.expires_in,
-                authorUrn: profile.id ? `urn:li:person:${profile.id}` : null,
-              }),
-            ),
-            updatedAt: FieldValue.serverTimestamp(),
-          });
-        await handleLinkedInCallback({ db, FieldValue, code, state });
-        return handleCORS(
-          request,
-          NextResponse.redirect(`${base}/settings/channels?linkedin=connected`),
-        );
-      } catch (e) {
-        console.error("LinkedIn callback failed:", e.message);
-        logError("LinkedIn callback failed", e);
-        return fail("exchange_failed");
-        return fail(e.message || "exchange_failed");
-      }
-    }
-
-    // POST /api/outreach/linkedin/send — auth required
-    if (route === "/outreach/linkedin/send" && method === "POST") {
-      if (!decoded)
-        return handleCORS(
-          request,
-          NextResponse.json({ error: "unauthorized" }, { status: 401 }),
-        );
-      const body = await request.json().catch(() => null);
-      if (!body)
-        return handleCORS(
-          request,
-          NextResponse.json({ error: "invalid JSON body" }, { status: 400 }),
-        );
-      const { recipientUrn, message } = body;
-      if (!recipientUrn || !message)
-        return handleCORS(
-          request,
-          NextResponse.json(
-            { error: "recipientUrn and message are required" },
-            { status: 400 },
-          ),
-        );
-      const snap = await db
-        .collection("users")
-        .doc(decoded.uid)
-        .collection("channels")
-        .doc("linkedin")
-        .get();
-      if (!snap.exists || !snap.data().connected)
-        return handleCORS(
-          request,
-          NextResponse.json(
-            { error: "linkedin channel not connected" },
-            { status: 400 },
-          ),
-        );
-      const creds = JSON.parse(decrypt(snap.data().encryptedCreds));
-      try {
-        const result = await linkedinSendMessage(
-          creds.access_token,
-          creds.authorUrn,
-          recipientUrn,
-          truncate(message, 2000),
-        );
-        return handleCORS(request, NextResponse.json({ sent: true, result }));
-      } catch (e) {
-        logError("LinkedIn message send failed", e, { recipientUrn });
-        return handleCORS(
-          request,
-          NextResponse.json(
-            { sent: false, error: "Failed to send LinkedIn message" },
-            { status: 502 },
-          ),
-        );
-      }
-    }
-
-    // DELETE /api/channels/linkedin — disconnect
+    // DELETE /api/channels/instagram — disconnect
     if (
       path[0] === "channels" &&
-      path[1] === "linkedin" &&
+      path[1] === "instagram" &&
       path.length === 2 &&
       method === "DELETE"
     ) {
-      if (!decoded)
+      if (!decoded) {
         return handleCORS(
           request,
           NextResponse.json({ error: "unauthorized" }, { status: 401 }),
         );
-      await db
-        .collection("users")
-        .doc(decoded.uid)
-        .collection("channels")
-        .doc("linkedin")
-        .delete();
-      return handleCORS(request, NextResponse.json({ ok: true }));
+      }
+      const res = await disconnectInstagramChannel({ db, user: decoded });
+      return handleCORS(request, NextResponse.json(res));
+    }
+
+    // POST /api/channels/messenger/connect — auth required
+    if (
+      path[0] === "channels" &&
+      path[1] === "messenger" &&
+      path[2] === "connect" &&
+      method === "POST"
+    ) {
+      if (!decoded) {
+        return handleCORS(
+          request,
+          NextResponse.json({ error: "unauthorized" }, { status: 401 }),
+        );
+      }
+      const raw = await request.json().catch(() => null);
+      const res = await connectMessengerChannel({
+        db,
+        FieldValue,
+        user: decoded,
+        body: raw,
+      });
+      return handleCORS(request, NextResponse.json(res));
+    }
+
+    // DELETE /api/channels/messenger — disconnect
+    if (
+      path[0] === "channels" &&
+      path[1] === "messenger" &&
+      path.length === 2 &&
+      method === "DELETE"
+    ) {
+      if (!decoded) {
+        return handleCORS(
+          request,
+          NextResponse.json({ error: "unauthorized" }, { status: 401 }),
+        );
+      }
+      const res = await disconnectMessengerChannel({ db, user: decoded });
+      return handleCORS(request, NextResponse.json(res));
+    }
+
+    // POST /api/outreach/instagram/send — auth required
+    if (route === "/outreach/instagram/send" && method === "POST") {
+      if (!decoded) {
+        return handleCORS(
+          request,
+          NextResponse.json({ error: "unauthorized" }, { status: 401 }),
+        );
+      }
+      const raw = await request.json().catch(() => null);
+      const res = await sendMetaOutreach({
+        db,
+        user: decoded,
+        channel: "instagram",
+        body: raw,
+      });
+      return handleCORS(request, NextResponse.json(res));
+    }
+
+    // POST /api/outreach/messenger/send — auth required
+    if (route === "/outreach/messenger/send" && method === "POST") {
+      if (!decoded) {
+        return handleCORS(
+          request,
+          NextResponse.json({ error: "unauthorized" }, { status: 401 }),
+        );
+      }
+      const raw = await request.json().catch(() => null);
+      const res = await sendMetaOutreach({
+        db,
+        user: decoded,
+        channel: "messenger",
+        body: raw,
+      });
+      return handleCORS(request, NextResponse.json(res));
+    }
+
+    // GET /api/webhooks/meta — Webhook verification challenge
+    if (route === "/webhooks/meta" && method === "GET") {
+      const url = new URL(request.url);
+      const mode = url.searchParams.get("hub.mode");
+      const token = url.searchParams.get("hub.verify_token");
+      const challenge = url.searchParams.get("hub.challenge");
+      const expectedToken =
+        process.env.META_WEBHOOK_VERIFY_TOKEN || "dmforge_meta_verify";
+
+      if (mode === "subscribe" && token === expectedToken) {
+        return new Response(challenge || "", {
+          status: 200,
+          headers: { "Content-Type": "text/plain" },
+        });
+      }
+      return new Response("Forbidden", { status: 403 });
+    }
+
+    // POST /api/webhooks/meta — Inbound Instagram & Messenger events
+    if (route === "/webhooks/meta" && method === "POST") {
+      const raw = await request.json().catch(() => null);
+      if (raw && Array.isArray(raw.entry)) {
+        for (const entry of raw.entry) {
+          const recipientId = entry.id;
+          const messaging = entry.messaging || [];
+          for (const m of messaging) {
+            if (!m.message || m.message.is_echo || !m.message.text) continue;
+            const senderId = m.sender?.id;
+            const text = m.message.text;
+
+            const indexDoc = await db
+              .collection("meta_channel_index")
+              .doc(recipientId)
+              .get();
+            if (!indexDoc.exists) continue;
+            const { uid, channel } = indexDoc.data();
+
+            const userDoc = await db.collection("users").doc(uid).get();
+            const inboundToken = userDoc.exists
+              ? userDoc.data()?.inboundToken
+              : null;
+            if (inboundToken) {
+              await ingestInboundReply({
+                db,
+                FieldValue,
+                token: inboundToken,
+                body: {
+                  channel:
+                    channel ||
+                    (raw.object === "instagram" ? "instagram" : "messenger"),
+                  handle: senderId,
+                  message: text,
+                },
+              }).catch((err) =>
+                logError("Meta webhook prospect ingest error", err),
+              );
+            }
+          }
+        }
+      }
+      return handleCORS(request, NextResponse.json({ success: true }));
     }
 
     // ---- Team / agency seats ----

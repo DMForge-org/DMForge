@@ -88,7 +88,7 @@ The Admin SDK resolves credentials in order; first match wins. Typical `loadServ
 3. `FIREBASE_SERVICE_ACCOUNT_PATH` file
 
 | Error seen in logs | Real cause | Fix |
-|---|---|---|
+| --- | --- | --- |
 | `16 UNAUTHENTICATED: ... Expected OAuth 2 access token` | The service-account key was revoked/disabled — usually a **leaked key auto-disabled** after a repo went public. Worked earlier only because the OAuth token was cached. | **Rotate the key** (revoke old, create new JSON). Update the env var. Redeploy. Then scrub the key from git history and keep it out of the repo. |
 | `Failed to parse private key: error:1E08010C:DECODER routines::unsupported` | `FIREBASE_PRIVATE_KEY` is malformed PEM — surrounding quotes included, or double-escaped `\\n`, or mangled newlines. | Don't fight the escaping. Set `FIREBASE_SERVICE_ACCOUNT_JSON` to the **single-line** minified key JSON instead — `JSON.parse` handles the newlines natively. Remove the broken `FIREBASE_PRIVATE_KEY`. |
 | `Firebase Admin SDK not configured` | No credential resolved — the JSON var is unset or invalid (silently skipped) and the others aren't set. | Set a **valid** single-line `FIREBASE_SERVICE_ACCOUNT_JSON`. Verify it parses: `node -p "JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON).client_email"`. |
