@@ -184,74 +184,173 @@ export default function InboxPage() {
       ) : (
         <div className="space-y-2">
           {shown.map((p) => (
-            <Card key={p.id} role="button" tabIndex={0} onClick={() => openThread(p.id)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openThread(p.id) } }}
-              className="bg-[#161630] border-[#2A2A55] p-4 cursor-pointer hover:border-[#6B5BFF]/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6B5BFF]">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold truncate">{p.name}</span>
-                    <StatusBadge status={p.status} />
-                  </div>
-                  <div className="text-xs text-[#A0A0C8] mt-0.5">
-                    {p.handle || p.email || p.phone || '—'} · {p.channel}
-                  </div>
-                  {p.latestReply && <div className="text-sm text-[#C7C7E0] mt-1.5 truncate">↩ {p.latestReply}</div>}
-                </div>
-                <div className="text-[10px] text-[#7A7A9A] whitespace-nowrap">{relTime(p.latestReplyAt || p.lastMessageAt || p.updatedAt)}</div>
-              </div>
-            </Card>
+            <ProspectCard key={p.id} prospect={p} onOpen={openThread} />
           ))}
         </div>
       )}
 
       {/* Thread panel */}
-      {selected && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={() => setSelected(null)} role="presentation">
-          <div role="dialog" aria-modal="true" aria-labelledby="thread-panel-title" className="w-full max-w-md bg-[#0F0F26] border-l border-[#2A2A55] h-full flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b border-[#2A2A55] flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2"><span id="thread-panel-title" className="font-semibold">{selected.prospect.name}</span><StatusBadge status={selected.prospect.status} /></div>
-                <div className="text-xs text-[#A0A0C8] mt-0.5">{selected.prospect.handle || selected.prospect.email || selected.prospect.phone || '—'} · {selected.prospect.channel}</div>
-              </div>
-              <button onClick={() => setSelected(null)} aria-label="Close thread" className="text-[#A0A0C8] hover:text-white"><X className="w-5 h-5" /></button>
+      <ThreadDrawer
+        selected={selected}
+        onClose={() => setSelected(null)}
+        onPatchProspect={patchProspect}
+        draft={draft}
+        setDraft={setDraft}
+        onSendMessage={sendMessage}
+        statuses={STATUSES}
+      />
+    </div>
+  )
+}
+
+function ProspectCard({ prospect, onOpen }) {
+  return (
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(prospect.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onOpen(prospect.id)
+        }
+      }}
+      className="bg-[#161630] border-[#2A2A55] p-4 cursor-pointer hover:border-[#6B5BFF]/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6B5BFF]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold truncate">{prospect.name}</span>
+            <StatusBadge status={prospect.status} />
+          </div>
+          <div className="text-xs text-[#A0A0C8] mt-0.5">
+            {prospect.handle || prospect.email || prospect.phone || '—'} · {prospect.channel}
+          </div>
+          {prospect.latestReply && (
+            <div className="text-sm text-[#C7C7E0] mt-1.5 truncate">↩ {prospect.latestReply}</div>
+          )}
+        </div>
+        <div className="text-[10px] text-[#7A7A9A] whitespace-nowrap">
+          {relTime(prospect.latestReplyAt || prospect.lastMessageAt || prospect.updatedAt)}
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function ThreadDrawer({
+  selected,
+  onClose,
+  onPatchProspect,
+  draft,
+  setDraft,
+  onSendMessage,
+  statuses,
+}) {
+  if (!selected) return null
+  return (
+    <div
+      className="fixed inset-0 z-50 flex justify-end bg-black/50"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="thread-panel-title"
+        className="w-full max-w-md bg-[#0F0F26] border-l border-[#2A2A55] h-full flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-4 border-b border-[#2A2A55] flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span id="thread-panel-title" className="font-semibold">{selected.prospect.name}</span>
+              <StatusBadge status={selected.prospect.status} />
             </div>
-
-            <div className="p-4 border-b border-[#2A2A55] flex flex-wrap gap-1.5">
-              {STATUSES.map((s) => (
-                <button key={s} type="button" aria-pressed={selected.prospect.status === s} onClick={() => patchProspect(selected.prospect.id, { status: s })}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium capitalize ${selected.prospect.status === s ? 'bg-[#6B5BFF] text-white' : 'bg-[#161630] text-[#A0A0C8] border border-[#2A2A55]'}`}>{s}</button>
-              ))}
-            </div>
-
-            {selected.prospect.status === 'booked' || selected.prospect.scheduledAt ? (
-              <div className="px-4 py-2 border-b border-[#2A2A55] flex items-center gap-2 text-xs text-[#A0A0C8]">
-                <Calendar className="w-3.5 h-3.5 text-[#5FE0A8]" />
-                <input type="datetime-local" aria-label="Scheduled call time" defaultValue={selected.prospect.scheduledAt ? selected.prospect.scheduledAt.slice(0, 16) : ''}
-                  onChange={(e) => patchProspect(selected.prospect.id, { scheduledAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                  className="bg-[#161630] border border-[#2A2A55] rounded px-2 py-1 text-xs" />
-                <span>call time (drives SMS reminders)</span>
-              </div>
-            ) : null}
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {selected.messages.length === 0 && <div className="text-center text-xs text-[#7A7A9A] mt-6">No messages logged yet.</div>}
-              {selected.messages.map((m) => (
-                <div key={m.id} className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${m.direction === 'inbound' ? 'bg-[#161630] text-[#C7C7E0]' : 'bg-[#6B5BFF] text-white ml-auto'}`}>
-                  {m.body}
-                  <div className={`text-[9px] mt-1 ${m.direction === 'inbound' ? 'text-[#7A7A9A]' : 'text-white/60'}`}>{relTime(m.at)}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-3 border-t border-[#2A2A55] flex gap-2">
-              <Input aria-label="Message to log" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                placeholder="Log an outbound message…" className="bg-[#161630] border-[#2A2A55] text-sm" />
-              <Button onClick={sendMessage} aria-label="Log message" className="btn-primary border-0 px-3"><Send className="w-4 h-4" /></Button>
+            <div className="text-xs text-[#A0A0C8] mt-0.5">
+              {selected.prospect.handle || selected.prospect.email || selected.prospect.phone || '—'} · {selected.prospect.channel}
             </div>
           </div>
+          <button onClick={onClose} aria-label="Close thread" className="text-[#A0A0C8] hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
         </div>
-      )}
+
+        <div className="p-4 border-b border-[#2A2A55] flex flex-wrap gap-1.5">
+          {statuses.map((s) => (
+            <button
+              key={s}
+              type="button"
+              aria-pressed={selected.prospect.status === s}
+              onClick={() => onPatchProspect(selected.prospect.id, { status: s })}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-medium capitalize ${
+                selected.prospect.status === s
+                  ? 'bg-[#6B5BFF] text-white'
+                  : 'bg-[#161630] text-[#A0A0C8] border border-[#2A2A55]'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        {(selected.prospect.status === 'booked' || selected.prospect.scheduledAt) && (
+          <div className="px-4 py-2 border-b border-[#2A2A55] flex items-center gap-2 text-xs text-[#A0A0C8]">
+            <Calendar className="w-3.5 h-3.5 text-[#5FE0A8]" />
+            <input
+              type="datetime-local"
+              aria-label="Scheduled call time"
+              defaultValue={selected.prospect.scheduledAt ? selected.prospect.scheduledAt.slice(0, 16) : ''}
+              onChange={(e) =>
+                onPatchProspect(selected.prospect.id, {
+                  scheduledAt: e.target.value ? new Date(e.target.value).toISOString() : null,
+                })
+              }
+              className="bg-[#161630] border border-[#2A2A55] rounded px-2 py-1 text-xs"
+            />
+            <span>call time (drives SMS reminders)</span>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          {selected.messages.length === 0 && (
+            <div className="text-center text-xs text-[#7A7A9A] mt-6">No messages logged yet.</div>
+          )}
+          {selected.messages.map((m) => (
+            <div
+              key={m.id}
+              className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
+                m.direction === 'inbound'
+                  ? 'bg-[#161630] text-[#C7C7E0]'
+                  : 'bg-[#6B5BFF] text-white ml-auto'
+              }`}
+            >
+              {m.body}
+              <div className={`text-[9px] mt-1 ${m.direction === 'inbound' ? 'text-[#7A7A9A]' : 'text-white/60'}`}>
+                {relTime(m.at)}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-3 border-t border-[#2A2A55] flex gap-2">
+          <Input
+            aria-label="Message to log"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && onSendMessage()}
+            placeholder="Log an outbound message…"
+            className="bg-[#161630] border-[#2A2A55] text-sm"
+          />
+          <Button
+            onClick={onSendMessage}
+            aria-label="Log message"
+            className="btn-primary border-0 px-3"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

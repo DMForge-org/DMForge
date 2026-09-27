@@ -142,22 +142,14 @@ export default function Dashboard() {
           </Card>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
-            {agents.map(a => (
-              <Card key={a.id} className="bg-[#161630] border-[#2A2A55] p-5">
-                <div className="flex items-baseline justify-between">
-                  <h3 className="font-display font-bold text-lg">{a.agentName}</h3>
-                  <span className="text-[10px] uppercase tracking-widest text-[#6B5BFF]">{a.niche}</span>
-                </div>
-                <p className="text-xs text-[#A0A0C8] mt-2 line-clamp-3">{a.offer}</p>
-                <div className="mt-3 text-xs text-[#A0A0C8]">{a.script?.questions?.length || 0} qualification questions</div>
-                <button
-                  onClick={() => setExpandedId(expandedId === a.id ? null : a.id)}
-                  className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-[#6B5BFF] hover:text-[#FF4D6D]"
-                >
-                  Follow-up Sequence <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedId === a.id ? 'rotate-180' : ''}`} />
-                </button>
-                {expandedId === a.id && <FollowUpSequence agentId={a.id} getToken={getToken} />}
-              </Card>
+            {agents.map((a) => (
+              <AgentCard
+                key={a.id}
+                agent={a}
+                expandedId={expandedId}
+                setExpandedId={setExpandedId}
+                getToken={getToken}
+              />
             ))}
           </div>
         )}
@@ -170,25 +162,52 @@ export default function Dashboard() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {results.map(r => (
-              <Link key={r.id} href={`/r/${r.id}`} className="block bg-[#161630] border border-[#2A2A55] hover:border-[#FF4D6D] rounded-xl p-5 transition">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      {r.state?.booked && <Badge className="bg-[#34D399]/20 text-[#34D399] border-0">Booked</Badge>}
-                      {r.state?.qualified && !r.state?.booked && <Badge className="bg-[#6B5BFF]/20 text-[#6B5BFF] border-0">Qualified</Badge>}
-                      <span className="text-xs text-[#A0A0C8]">{r.agentName} • {r.niche}</span>
-                    </div>
-                    <p className="text-sm text-white">{r.summary?.headline || `${r.transcript?.length || 0} messages`}</p>
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-[#A0A0C8]" />
-                </div>
-              </Link>
+            {results.map((r) => (
+              <TranscriptItem key={r.id} result={r} />
             ))}
           </div>
         )}
       </div>
     </div>
+  )
+}
+
+function AgentCard({ agent, expandedId, setExpandedId, getToken }) {
+  const isExpanded = expandedId === agent.id
+  return (
+    <Card className="bg-[#161630] border-[#2A2A55] p-5">
+      <div className="flex items-baseline justify-between">
+        <h3 className="font-display font-bold text-lg">{agent.agentName}</h3>
+        <span className="text-[10px] uppercase tracking-widest text-[#6B5BFF]">{agent.niche}</span>
+      </div>
+      <p className="text-xs text-[#A0A0C8] mt-2 line-clamp-3">{agent.offer}</p>
+      <div className="mt-3 text-xs text-[#A0A0C8]">{agent.script?.questions?.length || 0} qualification questions</div>
+      <button
+        onClick={() => setExpandedId(isExpanded ? null : agent.id)}
+        className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-[#6B5BFF] hover:text-[#FF4D6D]"
+      >
+        Follow-up Sequence <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+      </button>
+      {isExpanded && <FollowUpSequence agentId={agent.id} getToken={getToken} />}
+    </Card>
+  )
+}
+
+function TranscriptItem({ result }) {
+  return (
+    <Link href={`/r/${result.id}`} className="block bg-[#161630] border border-[#2A2A55] hover:border-[#FF4D6D] rounded-xl p-5 transition">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            {result.state?.booked && <Badge className="bg-[#34D399]/20 text-[#34D399] border-0">Booked</Badge>}
+            {result.state?.qualified && !result.state?.booked && <Badge className="bg-[#6B5BFF]/20 text-[#6B5BFF] border-0">Qualified</Badge>}
+            <span className="text-xs text-[#A0A0C8]">{result.agentName} • {result.niche}</span>
+          </div>
+          <p className="text-sm text-white">{result.summary?.headline || `${result.transcript?.length || 0} messages`}</p>
+        </div>
+        <ExternalLink className="w-4 h-4 text-[#A0A0C8]" />
+      </div>
+    </Link>
   )
 }
 
