@@ -12,7 +12,7 @@ export async function POST(request) {
   const stripe = getStripe()
   let event
   try {
-    const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET || '').replace(/^["']|["']$/g, '').trim()
+    const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET || '').trim().replace(/^["']|["']$/g, '')
     if (webhookSecret) {
       event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
     } else if (process.env.NODE_ENV !== 'production') {
