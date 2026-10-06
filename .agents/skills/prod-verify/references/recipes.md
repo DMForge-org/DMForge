@@ -87,11 +87,11 @@ The Admin SDK resolves credentials in order; first match wins. Typical `loadServ
 2. `FIREBASE_PRIVATE_KEY` + `FIREBASE_CLIENT_EMAIL` + project id → `.replace(/\\n/g,'\n')`
 3. `FIREBASE_SERVICE_ACCOUNT_PATH` file
 
-| Error seen in logs | Real cause | Fix |
-| --- | --- | --- |
-| `16 UNAUTHENTICATED: ... Expected OAuth 2 access token` | The service-account key was revoked/disabled — usually a **leaked key auto-disabled** after a repo went public. Worked earlier only because the OAuth token was cached. | **Rotate the key** (revoke old, create new JSON). Update the env var. Redeploy. Then scrub the key from git history and keep it out of the repo. |
-| `Failed to parse private key: error:1E08010C:DECODER routines::unsupported` | `FIREBASE_PRIVATE_KEY` is malformed PEM — surrounding quotes included, or double-escaped `\\n`, or mangled newlines. | Don't fight the escaping. Set `FIREBASE_SERVICE_ACCOUNT_JSON` to the **single-line** minified key JSON instead — `JSON.parse` handles the newlines natively. Remove the broken `FIREBASE_PRIVATE_KEY`. |
-| `Firebase Admin SDK not configured` | No credential resolved — the JSON var is unset or invalid (silently skipped) and the others aren't set. | Set a **valid** single-line `FIREBASE_SERVICE_ACCOUNT_JSON`. Verify it parses: `node -p "JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON).client_email"`. |
+| Error seen in logs                                                          | Real cause                                                                                                                                                              | Fix                                                                                                                                                                                                    |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `16 UNAUTHENTICATED: ... Expected OAuth 2 access token`                     | The service-account key was revoked/disabled — usually a **leaked key auto-disabled** after a repo went public. Worked earlier only because the OAuth token was cached. | **Rotate the key** (revoke old, create new JSON). Update the env var. Redeploy. Then scrub the key from git history and keep it out of the repo.                                                       |
+| `Failed to parse private key: error:1E08010C:DECODER routines::unsupported` | `FIREBASE_PRIVATE_KEY` is malformed PEM — surrounding quotes included, or double-escaped `\\n`, or mangled newlines.                                                    | Don't fight the escaping. Set `FIREBASE_SERVICE_ACCOUNT_JSON` to the **single-line** minified key JSON instead — `JSON.parse` handles the newlines natively. Remove the broken `FIREBASE_PRIVATE_KEY`. |
+| `Firebase Admin SDK not configured`                                         | No credential resolved — the JSON var is unset or invalid (silently skipped) and the others aren't set.                                                                 | Set a **valid** single-line `FIREBASE_SERVICE_ACCOUNT_JSON`. Verify it parses: `node -p "JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON).client_email"`.                                         |
 
 Generate the bulletproof single-line value:
 
@@ -105,6 +105,13 @@ Verify after redeploy — both must be 200:
 curl -s -o /dev/null -w "create:%{http_code}\n" -X POST "$BASE/api/<write-route>" -H "Content-Type: application/json" -d '{...}'
 # plus a fresh Firebase Auth signUp -> /api/me returns 200 with the provisioned user
 ```
+
+## 5.1 Stripe & HTTP header credential gotchas
+
+| Error seen in logs                                                                    | Real cause                                                                                            | Fix                                       |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------- |
+| `TypeError [ERR_INVALID_CHAR]: Invalid character in header content ["Authorization"]` | `STRIPE_SECRET_KEY` in Vercel or `.env` contains surrounding quotes (`"sk_..."`) or trailing newline. | Wrap retrieval with `.replace(/^["']      | ["']$/g, '').trim()`.                                       |
+| `Webhook signature verification failed` on valid Stripe payload                       | `STRIPE_WEBHOOK_SECRET` has quotes or whitespace from dashboard copy-paste.                           | Clean secret string with `.replace(/^["'] | ["']$/g, '').trim()`before`stripe.webhooks.constructEvent`. |
 
 ## 6. Stripe checkout / portal verification
 
@@ -127,34 +134,43 @@ npx playwright install --with-deps chromium
 `playwright.config.js` (override target with `BASE_URL` for any project):
 
 ```js
-const { defineConfig, devices } = require('@playwright/test')
-const baseURL = process.env.BASE_URL || 'https://www.example.com'
+const { defineConfig, devices } = require("@playwright/test");
+const baseURL = process.env.BASE_URL || "https://www.example.com";
 module.exports = defineConfig({
-  testDir: './tests/e2e', timeout: 60_000, expect: { timeout: 15_000 },
+  testDir: "./tests/e2e",
+  timeout: 60_000,
+  expect: { timeout: 15_000 },
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
-  use: { baseURL, headless: true, screenshot: 'only-on-failure', trace: 'on-first-retry' },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-})
+  reporter: process.env.CI
+    ? [["github"], ["html", { open: "never" }]]
+    : [["list"]],
+  use: {
+    baseURL,
+    headless: true,
+    screenshot: "only-on-failure",
+    trace: "on-first-retry",
+  },
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+});
 ```
 
 `tests/e2e/smoke.spec.js` — target visible text/placeholders; scope ambiguous controls:
 
 ```js
-const { test, expect } = require('@playwright/test')
-test('homepage loads', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.getByText(/<hero text>/i)).toBeVisible()
-})
-test('core flow works', async ({ page }) => {
-  await page.goto('/')
+const { test, expect } = require("@playwright/test");
+test("homepage loads", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText(/<hero text>/i)).toBeVisible();
+});
+test("core flow works", async ({ page }) => {
+  await page.goto("/");
   // advance a wizard with defaults, then click the action; if a label is duplicated
   // on the page, scope it (e.g. the one paired with "Back"):
   // await page.getByRole('button', { name: 'Back' }).locator('..')
   //   .getByRole('button', { name: /<action>/i }).click()
   // assert the success state (an element that only appears on success), with a long
   // timeout if it calls an LLM/3rd-party.
-})
+});
 ```
 
 Run: `npm run test:e2e` (prod) or `BASE_URL=http://localhost:3000 npm run test:e2e` (local).

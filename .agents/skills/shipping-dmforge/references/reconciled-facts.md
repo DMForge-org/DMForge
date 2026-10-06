@@ -40,7 +40,7 @@ whenever you catch a new piece of drift — that's the whole point of it existin
 
 - **`firebase-admin` is pinned to `13.x`.** Version 14's ESM default export
   loses `admin.apps` and its `jose@6` dependency can't be `require()`'d —
-  this 500s *every* API route on Vercel, and it's invisible to `yarn build`
+  this 500s _every_ API route on Vercel, and it's invisible to `yarn build`
   and CI (only shows up on a live route). If a workflow or dependency-update
   tool suggests bumping it, don't, without proving a live API route works first.
 - **Vercel Preview has no Firebase Admin credentials.** Every API route on a
@@ -102,16 +102,28 @@ directly on their own machine.
   writes. Don't chase it past one or two attempts. Fall back to compiling the
   changed files through Next's own SWC transformer directly (fast, catches
   real syntax errors, not a substitute for a real build):
+
   ```js
-  const swc = require('next/dist/build/swc');
+  const swc = require("next/dist/build/swc");
   await swc.loadBindings();
-  await swc.transform(code, { filename, jsc: { parser: { syntax: 'ecmascript', jsx: true } } });
+  await swc.transform(code, {
+    filename,
+    jsc: { parser: { syntax: "ecmascript", jsx: true } },
+  });
   ```
+
   Tell the user this is a compile check, not a full build, and that they
   should run `yarn build` on their real machine before actually shipping.
+
 - **This VM's local git config has no `user.name`/`user.email`** (the global
   `.gitconfig` lives on the Windows side and isn't visible here) — first
   commit attempt fails with "Author identity unknown." Fix with a **local**
   (repo-scoped — never `--global`) config matching the existing commit
   history's author (`git log -3 --format='%an <%ae>'` first — don't invent an
   identity or use your own).
+
+## Git index corruption (0-byte index)
+
+- **Symptom**: `git status` fails with `fatal: .git/index: index file smaller than expected`.
+- **Cause**: Interrupted command, filesystem disconnect, or crash leaving `.git/index` at 0 bytes.
+- **Fix**: `Move-Item .git\index .git\index.corrupted-$(Get-Date -Format 'yyyyMMddHHmmss'); git reset`. This safely rebuilds the index from `HEAD` without discarding unstaged file changes.

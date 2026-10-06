@@ -4,16 +4,16 @@ AI DM appointment setter SaaS for online coaches. Build, live-test, and deploy A
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 16 (App Router), React 19 |
-| Backend | Next.js API Routes (serverless) |
-| Database | Firebase Firestore (named database "dmforge") |
-| Auth | Firebase Auth (email/password + Google OAuth) |
+| Layer      | Technology                                                             |
+| ---------- | ---------------------------------------------------------------------- |
+| Frontend   | Next.js 16 (App Router), React 19                                      |
+| Backend    | Next.js API Routes (serverless)                                        |
+| Database   | Firebase Firestore (named database "dmforge")                          |
+| Auth       | Firebase Auth (email/password + Google OAuth)                          |
 | Server SDK | `firebase-admin` 13.x — **pinned, do not bump to 14** (see note below) |
-| LLM | Google Gemini 2.5 Flash |
-| Payments | Stripe (subscriptions) |
-| UI | Radix UI + shadcn/ui + Tailwind CSS |
+| LLM        | Google Gemini 2.5 Flash                                                |
+| Payments   | Stripe (subscriptions)                                                 |
+| UI         | Radix UI + shadcn/ui + Tailwind CSS                                    |
 
 > **Why `firebase-admin` is pinned to 13.x:** v14 pulls in `jwks-rsa@4` → `jose@6`, which is
 > ESM-only. That breaks every API route with a 500 on Vercel's Node runtime, while build and CI
@@ -40,27 +40,27 @@ cd DMForge
 yarn install
 ```
 
-2. Copy the environment template and fill in your values:
+1. Copy the environment template and fill in your values:
 
 ```bash
 cp .env.example .env.local
 # Edit .env.local with your keys
 ```
 
-3. Set up Firebase:
-   - Create a Firebase project at https://console.firebase.google.com
+1. Set up Firebase:
+   - Create a Firebase project at <https://console.firebase.google.com>
    - Enable Firestore, set database ID to `dmforge`
    - Enable Authentication (email/password + Google)
    - Download the service account JSON → paste into `FIREBASE_SERVICE_ACCOUNT_JSON` in `.env.local`
    - Copy the web app config into the `NEXT_PUBLIC_FIREBASE_*` vars
 
-4. Start the development server:
+2. Start the development server:
 
 ```bash
 yarn dev
 ```
 
-Open http://localhost:3000
+Open <http://localhost:3000>
 
 ### Running Tests
 
@@ -91,6 +91,7 @@ See `.env.example` for all required variables. Key notes:
 Add a webhook in the Stripe dashboard pointing to `https://your-domain.com/api/stripe/webhook`.
 
 Events to listen for:
+
 - `checkout.session.completed`
 - `customer.subscription.created`
 - `customer.subscription.updated`
@@ -113,7 +114,7 @@ Self-hosting would require adding that config first.
 
 ## Project Structure
 
-```
+```js
 app/
   page.js                    # Homepage (hero, wizard, simulator, pricing)
   dashboard/page.js          # User dashboard
@@ -141,62 +142,62 @@ components/
 
 ## API Endpoints
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/api/` | — | Health check |
-| POST | `/api/agent/create` | optional | Create AI agent |
-| POST | `/api/agent/chat` | — | Multi-turn chat |
-| POST | `/api/result/save` | optional | Save transcript |
-| GET | `/api/result/:id` | — | Get saved result |
-| GET | `/api/me` | required | Current user info |
-| GET | `/api/my/agents` | required | User's agents |
-| GET | `/api/my/results` | required | User's transcripts |
-| POST | `/api/billing/checkout` | required | Create Stripe checkout |
-| POST | `/api/billing/portal` | required | Billing portal link |
-| GET | `/api/billing/session` | — | Retrieve checkout session |
-| GET | `/api/competitors` | — | List competitors |
-| GET | `/api/plans` | — | List pricing plans |
-| POST | `/api/agents/:id/sequences/generate` | owner-only if claimed | Generate Day 1/3/7 follow-up sequence |
-| GET | `/api/agents/:id/sequences` | — | Get an agent's follow-up sequence |
-| PUT | `/api/agents/:id/sequences/:seqId` | owner-only if claimed | Edit a sequence step |
-| POST | `/api/webhooks` | required | Register an outbound webhook |
-| GET | `/api/webhooks` | required | List your webhooks |
-| DELETE | `/api/webhooks/:id` | required | Remove a webhook |
-| POST | `/api/channels/email/connect` | required | Connect Gmail (SMTP+app password) or SMTP |
-| DELETE | `/api/channels/email` | required | Disconnect email channel |
-| GET | `/api/channels` | required | List connected channels |
-| POST | `/api/outreach/send` | required | Send an email via the connected channel |
-| POST | `/api/channels/instagram/connect` | required | Connect Instagram Professional account (Page Token + IG Account ID) |
-| DELETE | `/api/channels/instagram` | required | Disconnect Instagram channel |
-| POST | `/api/channels/messenger/connect` | required | Connect Facebook Messenger (Page Token + Page ID) |
-| DELETE | `/api/channels/messenger` | required | Disconnect Messenger channel |
-| POST | `/api/outreach/instagram/send` | required | Send an outbound Instagram DM |
-| POST | `/api/outreach/messenger/send` | required | Send an outbound Messenger message |
-| GET | `/api/webhooks/meta` | — | Meta Webhook hub verification challenge |
-| POST | `/api/webhooks/meta` | optional sig | Inbound Instagram & Messenger DM webhook handler |
-| POST | `/api/agency/invite` | required (owner) | Invite a team member |
-| GET | `/api/agency/accept` | required | Accept an invite (`?token=`) |
-| POST | `/api/agency/remove` | required (owner) | Remove a member |
-| GET | `/api/agency` | required | Agency + members for current user |
-| POST | `/api/channels/sms/connect` | required | Connect Twilio (SID/token/from) |
-| DELETE | `/api/channels/sms` | required | Disconnect SMS |
-| POST | `/api/reminders/schedule` | required | Schedule 24h + 1h reminder SMS |
-| GET | `/api/cron/send-reminders` | cron secret | Fire overdue reminders (Vercel cron) |
-| PUT | `/api/agency/white-label` | required (Agency owner) | Update white-label branding |
-| POST | `/api/integrations/ghl/connect` | required | Connect GoHighLevel (API key + location) |
-| DELETE | `/api/integrations/ghl` | required | Disconnect GoHighLevel |
-| GET | `/api/integrations` | required | List connected integrations |
-| POST | `/api/integrations/ghl/sync` | required | Push contact + appointment to GHL |
-| POST | `/api/integrations/ghl/webhook` | signature | Inbound GHL events (HMAC verified) |
+| Method | Path                                 | Auth                    | Description                                                         |
+| ------ | ------------------------------------ | ----------------------- | ------------------------------------------------------------------- |
+| GET    | `/api/`                              | —                       | Health check                                                        |
+| POST   | `/api/agent/create`                  | optional                | Create AI agent                                                     |
+| POST   | `/api/agent/chat`                    | —                       | Multi-turn chat                                                     |
+| POST   | `/api/result/save`                   | optional                | Save transcript                                                     |
+| GET    | `/api/result/:id`                    | —                       | Get saved result                                                    |
+| GET    | `/api/me`                            | required                | Current user info                                                   |
+| GET    | `/api/my/agents`                     | required                | User's agents                                                       |
+| GET    | `/api/my/results`                    | required                | User's transcripts                                                  |
+| POST   | `/api/billing/checkout`              | required                | Create Stripe checkout                                              |
+| POST   | `/api/billing/portal`                | required                | Billing portal link                                                 |
+| GET    | `/api/billing/session`               | —                       | Retrieve checkout session                                           |
+| GET    | `/api/competitors`                   | —                       | List competitors                                                    |
+| GET    | `/api/plans`                         | —                       | List pricing plans                                                  |
+| POST   | `/api/agents/:id/sequences/generate` | owner-only if claimed   | Generate Day 1/3/7 follow-up sequence                               |
+| GET    | `/api/agents/:id/sequences`          | —                       | Get an agent's follow-up sequence                                   |
+| PUT    | `/api/agents/:id/sequences/:seqId`   | owner-only if claimed   | Edit a sequence step                                                |
+| POST   | `/api/webhooks`                      | required                | Register an outbound webhook                                        |
+| GET    | `/api/webhooks`                      | required                | List your webhooks                                                  |
+| DELETE | `/api/webhooks/:id`                  | required                | Remove a webhook                                                    |
+| POST   | `/api/channels/email/connect`        | required                | Connect Gmail (SMTP+app password) or SMTP                           |
+| DELETE | `/api/channels/email`                | required                | Disconnect email channel                                            |
+| GET    | `/api/channels`                      | required                | List connected channels                                             |
+| POST   | `/api/outreach/send`                 | required                | Send an email via the connected channel                             |
+| POST   | `/api/channels/instagram/connect`    | required                | Connect Instagram Professional account (Page Token + IG Account ID) |
+| DELETE | `/api/channels/instagram`            | required                | Disconnect Instagram channel                                        |
+| POST   | `/api/channels/messenger/connect`    | required                | Connect Facebook Messenger (Page Token + Page ID)                   |
+| DELETE | `/api/channels/messenger`            | required                | Disconnect Messenger channel                                        |
+| POST   | `/api/outreach/instagram/send`       | required                | Send an outbound Instagram DM                                       |
+| POST   | `/api/outreach/messenger/send`       | required                | Send an outbound Messenger message                                  |
+| GET    | `/api/webhooks/meta`                 | —                       | Meta Webhook hub verification challenge                             |
+| POST   | `/api/webhooks/meta`                 | optional sig            | Inbound Instagram & Messenger DM webhook handler                    |
+| POST   | `/api/agency/invite`                 | required (owner)        | Invite a team member                                                |
+| GET    | `/api/agency/accept`                 | required                | Accept an invite (`?token=`)                                        |
+| POST   | `/api/agency/remove`                 | required (owner)        | Remove a member                                                     |
+| GET    | `/api/agency`                        | required                | Agency + members for current user                                   |
+| POST   | `/api/channels/sms/connect`          | required                | Connect Twilio (SID/token/from)                                     |
+| DELETE | `/api/channels/sms`                  | required                | Disconnect SMS                                                      |
+| POST   | `/api/reminders/schedule`            | required                | Schedule 24h + 1h reminder SMS                                      |
+| GET    | `/api/cron/send-reminders`           | cron secret             | Fire overdue reminders (Vercel cron)                                |
+| PUT    | `/api/agency/white-label`            | required (Agency owner) | Update white-label branding                                         |
+| POST   | `/api/integrations/ghl/connect`      | required                | Connect GoHighLevel (API key + location)                            |
+| DELETE | `/api/integrations/ghl`              | required                | Disconnect GoHighLevel                                              |
+| GET    | `/api/integrations`                  | required                | List connected integrations                                         |
+| POST   | `/api/integrations/ghl/sync`         | required                | Push contact + appointment to GHL                                   |
+| POST   | `/api/integrations/ghl/webhook`      | signature               | Inbound GHL events (HMAC verified)                                  |
 
 ## Pricing
 
-| Plan | Price | Interval |
-|------|-------|----------|
-| Free | $0 | forever |
-| Pro | $39 | monthly |
-| Pro Annual | $390 | yearly |
-| Agency | $199 | monthly |
+| Plan       | Price | Interval |
+| ---------- | ----- | -------- |
+| Free       | $0    | forever  |
+| Pro        | $39   | monthly  |
+| Pro Annual | $390  | yearly   |
+| Agency     | $199  | monthly  |
 
 ## Security
 

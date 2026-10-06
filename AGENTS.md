@@ -33,6 +33,8 @@ AI DM appointment-setter SaaS for online coaches. Next.js App Router serverless 
 4. **Verify before shipping**: `yarn build` locally; after deploying, use the `prod-verify` skill (`.agents/skills/prod-verify`) for black-box production checks.
 5. **Commits**: Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`), imperative mood, small and scoped.
 6. **Tracked work**: sprint/task state lives in [TASKS.md](TASKS.md) — update it when completing a tracked task.
+7. **Zero False States**: Never advertise, stub, or mock channels or integrations that aren't functional. Live channels are Meta Graph API v21.0 (`instagram`, `messenger`), `email` (SMTP), and `sms` (Twilio reminders). Do not reintroduce LinkedIn outreach stubs.
+8. **Secret Sanitization**: Always strip quotes and whitespace from `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `ENCRYPTION_KEY` using `.trim().replace(/^["']|["']$/g, '')` (trim first — `$` doesn't match before a trailing newline) before passing to SDKs or crypto routines.
 
 ## Credentials Vault
 
@@ -50,7 +52,7 @@ Skills in `.agents/skills/` are shared across agents (Antigravity, Claude Code).
 
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 

@@ -19,14 +19,14 @@
 Claude Code has **two different tools** that both look like "an agent per area." Using the
 wrong one is why "spin up 6 agents to ship 6 features at once" usually disappoints.
 
-| | **Subagents** (`.claude/agents/*.md`) | **Parallel sessions** (your `claude-bridge` dispatcher) |
-|---|---|---|
-| What it is | A specialist the *main session* delegates to | Independent CC processes, one per task |
-| Context | Own isolated window; returns one result to the parent | Fully separate conversations |
-| Can they talk to each other? | **No** — report only to the parent thread | No, but they don't need to — they own different files |
-| Runs in parallel? | Within one session, yes — but all report to one parent | **Yes, truly independent** |
-| Best for | "Load the right expert + tool scope for *this* area," reviews, scoped research/impl inside a session | Shipping **non-overlapping** areas concurrently |
-| Cost model | Cheap to route (can pin Haiku per agent) | N sessions = N times the tokens |
+|                              | **Subagents** (`.claude/agents/*.md`)                                                                | **Parallel sessions** (your `claude-bridge` dispatcher) |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| What it is                   | A specialist the _main session_ delegates to                                                         | Independent CC processes, one per task                  |
+| Context                      | Own isolated window; returns one result to the parent                                                | Fully separate conversations                            |
+| Can they talk to each other? | **No** — report only to the parent thread                                                            | No, but they don't need to — they own different files   |
+| Runs in parallel?            | Within one session, yes — but all report to one parent                                               | **Yes, truly independent**                              |
+| Best for                     | "Load the right expert + tool scope for _this_ area," reviews, scoped research/impl inside a session | Shipping **non-overlapping** areas concurrently         |
+| Cost model                   | Cheap to route (can pin Haiku per agent)                                                             | N sessions = N times the tokens                         |
 
 **The combination that ships faster:**
 
@@ -34,8 +34,8 @@ wrong one is why "spin up 6 agents to ship 6 features at once" usually disappoin
   automatically gets the right expert (correct files loaded, known gotchas baked in,
   tools scoped) without you re-explaining the area every time.
 - **Parallel sessions** (dispatched via `claude-bridge` → CC, ideally each in its own
-  **git worktree**) are how you actually run several areas at once — *as long as their
-  files don't overlap.* Two sessions editing `app/api/[[...path]]/route.js` at the same
+  **git worktree**) are how you actually run several areas at once — _as long as their
+  files don't overlap._ Two sessions editing `app/api/[[...path]]/route.js` at the same
   time will collide; the monolithic route is the main hazard here (see `api-security`).
 
 So: define the subagents once (below), then dispatch parallel sessions per **worktree**
@@ -53,15 +53,15 @@ directly improves the core qualify-and-book loop. Three candidate jobs — **pic
 becomes the productized agent** (I'd start with the first, it's the most on-mission):
 
 1. **Inbound lead enrichment** — enrich a lead when they DM in, feed signals into the
-   qualification prompt / lead score. *(Highest leverage; ties to the `leads-model` work.)*
-2. **Outbound prospecting** — find coaches to sell DMForge *to* (pairs with the installed
+   qualification prompt / lead score. _(Highest leverage; ties to the `leads-model` work.)_
+2. **Outbound prospecting** — find coaches to sell DMForge _to_ (pairs with the installed
    `vibe-prospecting` / `sales:*` skills).
 3. **Competitive intel** — monitor rival DM-setter SaaS pricing/features
    (`competitive-intel` skill).
 
 ### Setup steps (run on your machine — this is not something I can do for you)
 
-OAuth signs into *your* Bright Data account and issues a key. Per secrets discipline, that
+OAuth signs into _your_ Bright Data account and issues a key. Per secrets discipline, that
 step is yours; I don't paste keys or drive third-party logins.
 
 ```bash
@@ -129,14 +129,14 @@ Six agents, each mapped to a real slice of the codebase and to the backlog from 
 Kept deliberately tight (six, not twelve) — an over-large agent roster is its own kind of
 bloat. Files are in `.claude/agents/` next to this doc.
 
-| Agent | Owns (files) | First jobs it should pick up |
-|---|---|---|
-| **billing-stripe** | `lib/stripe.js`, `app/api/stripe/webhook/route.js`, billing endpoints in the catch-all route | Verify + fix the `current_period_end` field-location bug; de-dupe the two `syncSubscription` copies |
+| Agent                     | Owns (files)                                                                                               | First jobs it should pick up                                                                               |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **billing-stripe**        | `lib/stripe.js`, `app/api/stripe/webhook/route.js`, billing endpoints in the catch-all route               | Verify + fix the `current_period_end` field-location bug; de-dupe the two `syncSubscription` copies        |
 | **channels-integrations** | `lib/email.js` `lib/sms.js` `lib/meta.js` `lib/ghl.js` `lib/encryption.js` + channel/integration endpoints | Meta Graph API v21.0 (Instagram/Messenger) + GHL (v1 vs v2) API shapes; key-version tag in `encryption.js` |
-| **leads-model** | *new* `leads/{uid}/prospects` subsystem + inbound-reply ingestion; then inbox + auto-triggers | Design the lead/prospect model; wire SMS-on-booked, GHL-sync-on-booked, and the inbox |
-| **api-security** | `app/api/[[...path]]/route.js`, `lib/rateLimit.js`, `next.config.js` CORS/headers | Add auth guards to `/agent/create` + `/agent/chat`; lock CORS default; wrap fire-and-forget in `after()` |
-| **lead-enricher** | Bright Data integration (CLI or `@brightdata/sdk`); enrichment endpoint/util | Stand up enrichment; feed signals into qualification/scoring (depends on `leads-model`) |
-| **verifier** | *read-only* — builds, e2e, prod probes | Gate every change: `yarn build`, Playwright vs preview, prod HTTP/Firestore probes; report only |
+| **leads-model**           | _new_ `leads/{uid}/prospects` subsystem + inbound-reply ingestion; then inbox + auto-triggers              | Design the lead/prospect model; wire SMS-on-booked, GHL-sync-on-booked, and the inbox                      |
+| **api-security**          | `app/api/[[...path]]/route.js`, `lib/rateLimit.js`, `next.config.js` CORS/headers                          | Add auth guards to `/agent/create` + `/agent/chat`; lock CORS default; wrap fire-and-forget in `after()`   |
+| **lead-enricher**         | Bright Data integration (CLI or `@brightdata/sdk`); enrichment endpoint/util                               | Stand up enrichment; feed signals into qualification/scoring (depends on `leads-model`)                    |
+| **verifier**              | _read-only_ — builds, e2e, prod probes                                                                     | Gate every change: `yarn build`, Playwright vs preview, prod HTTP/Firestore probes; report only            |
 
 **Dependency note:** `leads-model` is the keystone — `lead-enricher` and the auto-trigger
 halves of `channels-integrations` all depend on it existing. Sequence it first (or in its
@@ -178,6 +178,7 @@ agents have no `Write`/`Edit`; mechanical agents can drop to a cheaper model).
 
    Keep `api-security` **serialized** if other work touches the monolithic route — that
    file is the collision point.
+
 3. **Inside each session**, the matching subagent auto-engages (or invoke by name:
    "use the billing-stripe agent to fix current_period_end"). It has the files + gotchas
    loaded, so no re-explaining.
@@ -191,7 +192,7 @@ agents have no `Write`/`Edit`; mechanical agents can drop to a cheaper model).
 ## Assumptions & honesty box
 
 - **"Custom agents" = Claude Code subagents (dev-side), not DMForge's product `agents`
-  collection.** Read from "to ship faster." If you actually meant per-niche *product* DM
+  collection.** Read from "to ship faster." If you actually meant per-niche _product_ DM
   setters, say so — that's a different build.
 - **"SDK installed" = CLI or a global install**, since `@brightdata/sdk` isn't in DMForge's
   `package.json` (verified). The enricher agent covers both.

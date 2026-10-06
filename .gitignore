@@ -110,8 +110,8 @@ graphify-out/cache/stat-index.json
 # ruflo / claude-flow local runtime state (daemon, metrics, autopilot logs)
 .claude-flow/
 
-# ruflo / claude-flow local runtime state (daemon, metrics, autopilot logs)
-.claude-flow/
+# Generated Claude Code type definitions
+.claude/types/
 
 .projects/cache
 .projects/vault
