@@ -8,6 +8,7 @@ import {
   agentCreateSchema,
   billingCheckoutSchema,
 } from "@/lib/schemas";
+import { buildOpenApiSpec } from "@/lib/openapi";
 import { createAgent, isAgentAccessDenied } from "@/lib/services/agentService";
 import {
   createCheckoutSession,
@@ -268,6 +269,14 @@ async function handleRoute(request, { params }) {
           version: "1.0.0",
           backend: "firebase",
         }),
+      );
+    }
+
+    // GET /api/openapi.json — OpenAPI 3.1 contract, generated from lib/schemas
+    if (route === "/openapi.json" && method === "GET") {
+      return handleCORS(
+        request,
+        NextResponse.json(buildOpenApiSpec(new URL(request.url).origin)),
       );
     }
 
