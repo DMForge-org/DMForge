@@ -32,6 +32,10 @@ jobs:
           while IFS= read -r line; do
             sha="${line%% *}"
             subject="${line#* }"
+            if git diff-tree --quiet "${sha}^" "$sha"; then
+              echo "↷ $sha $subject (empty commit)"
+              continue
+            fi
             if echo "$subject" | grep -qE "$pattern"; then
               echo "✓ $sha $subject"
             else
