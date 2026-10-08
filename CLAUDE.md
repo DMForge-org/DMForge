@@ -4,11 +4,11 @@ AI DM appointment-setter SaaS for online coaches. Next.js App Router serverless 
 
 ## Stack
 
-- **Next.js 16 stable (App Router), React 18, plain JavaScript** — no TypeScript. Do not introduce `.ts`/`.tsx` files.
+- **Next.js App Router, plain JavaScript** — no TypeScript. Do not introduce `.ts`/`.tsx` files.
 - **Firebase**: Auth (email/password + Google) on the client, Admin SDK on the server. Firestore uses the **named database `dmforge`** (not `(default)`) — always go through [lib/firebaseAdmin.js](lib/firebaseAdmin.js) server-side and [lib/firebase.js](lib/firebase.js) client-side.
 - **LLM**: Google Gemini via a hand-rolled `fetch` to the REST API (no AI SDK) — see [lib/llm.js](lib/llm.js). `GEMINI_BASE_URL` optionally routes traffic through Cloudflare AI Gateway.
 - **Payments**: Stripe subscriptions — see [lib/stripe.js](lib/stripe.js) and the webhook handler under `app/api`.
-- **UI**: shadcn/ui (Radix primitives) + Tailwind CSS. Components live in `components/`, shadcn config in [components.json](components.json). Working with Figma designs (tokens, components, assets, icons, styling conventions)? See [FIGMA-DESIGN-SYSTEM.md](FIGMA-DESIGN-SYSTEM.md) first.
+- **UI**: shadcn/ui (Radix primitives) + Tailwind CSS. Working with Figma designs (tokens, components, assets, icons, styling conventions)? See [FIGMA-DESIGN-SYSTEM.md](FIGMA-DESIGN-SYSTEM.md) first.
 
 ## Commands
 
@@ -20,9 +20,6 @@ AI DM appointment-setter SaaS for online coaches. Next.js App Router serverless 
 ## Layout
 
 - `app/` — routes; API routes under `app/api` (a catch-all `[[...path]]` handles most endpoints)
-- `lib/` — server/shared logic: `firebaseAdmin`, `llm`, `stripe`, `ghl`, `rateLimit`, `encryption`, `webhooks`, …
-- `components/` — React components (shadcn/ui in `components/ui`)
-- `tests/e2e/` — Playwright specs
 - Path aliases: `@/lib/*`, `@/components/*`, `@/app/*` (see [jsconfig.json](jsconfig.json)) — prefer them over relative `../..` imports.
 
 ## Rules
