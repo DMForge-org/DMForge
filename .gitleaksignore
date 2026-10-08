@@ -1,3 +1,5 @@
 # False positives only. Each line is a gitleaks finding fingerprint (commit:file:rule:line).
 # DEPLOYMENT.md Twilio troubleshooting example: 'curl -u {accountSid}:{authToken}' is a template, not a credential.
 26ec548d545b465d0729357ef539058d614e1a4f:DEPLOYMENT.md:curl-auth-user:359
+# graphify-out/cache/stat-index.json stores per-file content hashes (64-hex), not credentials; the cache is untracked from 2026-10-08.
+7be4aa613e0837e4a0a83b23f007be2350a8d217:graphify-out/cache/stat-index.json:generic-api-key:1
