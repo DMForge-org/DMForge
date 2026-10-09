@@ -14,15 +14,15 @@ test('full wizard build produces a chat simulator', async ({ page }) => {
   const nameInput = page.getByPlaceholder(/your name/i)
   await nameInput.clear()
   await nameInput.fill('TestBot')
-  await page.getByRole('button', { name: 'Next' }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
 
   // Step 1: offer + audience (defaults are fine)
   await expect(page.getByPlaceholder(/ideal client/i)).toBeVisible()
   // scope Next to the one beside Back (step 1 and 2 both have Back + Next)
-  await page.getByRole('button', { name: 'Next' }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
 
   // Step 2: qualification (default is fine)
-  await page.getByRole('button', { name: 'Next' }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
 
   // Step 3: tone + build — two "Build my AI setter" buttons exist (wizard + marketing).
   // Scope to the one paired with "Back" (the wizard's Back button is its sibling).

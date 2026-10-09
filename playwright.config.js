@@ -4,7 +4,8 @@ const { defineConfig, devices } = require('@playwright/test')
 // IMPORTANT: Defaults to localhost (safe for local/CI testing).
 // To test production: BASE_URL=https://www.dmforge.org yarn test:e2e
 // (requires explicit opt-in to avoid accidental production test runs)
-const baseURL = process.env.BASE_URL || 'http://127.0.0.1:3000'
+// localhost, not 127.0.0.1: next dev 403s /_next/* chunks for non-localhost origins, so pages never hydrate.
+const baseURL = process.env.BASE_URL || 'http://localhost:3000'
 
 module.exports = defineConfig({
   testDir: './tests/e2e',
@@ -27,7 +28,7 @@ module.exports = defineConfig({
     ? undefined
     : {
         command: 'npx yarn@1.22.22 dev',
-        url: 'http://127.0.0.1:3000',
+        url: 'http://localhost:3000',
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,
       },
